@@ -1,13 +1,14 @@
 # Personal Assistant
 
 A command-line personal assistant for managing contacts and notes.
-Team project for the Neoversity course *Python Programming: Foundations and Best Practices*.
+Team project for the Neoversity course _Python Programming: Foundations and Best Practices_.
 
 > **Status:** in development. Commands and installation steps below describe the planned interface and will be updated as features land.
 
 ## Features
 
 ### Contacts
+
 - Add contacts with name, address, phone numbers, email and birthday
 - Validate phone numbers and emails on create/edit
 - Search contacts (by name and other fields)
@@ -15,10 +16,12 @@ Team project for the Neoversity course *Python Programming: Foundations and Best
 - Show contacts with a birthday in the next N days
 
 ### Notes
+
 - Add, search, edit and delete text notes
 - Tag notes with keywords; search and sort notes by tags
 
 ### Storage
+
 - All data is saved to the user's home folder (`~/.personal_assistant/`)
 - Data persists between restarts
 
@@ -54,13 +57,24 @@ python -m personal_assistant
 
 The assistant runs in an interactive loop: type a command, press Enter, and it responds until you exit.
 
-| Command | Description |
-|---|---|
-| `hello` | Greeting |
-| `help` | Show all commands |
-| `exit` / `close` | Save data and exit |
+| Command                                                      | Description                                     |
+| ------------------------------------------------------------ | ----------------------------------------------- |
+| `hello`                                                      | Greeting                                        |
+| `add [name] [phone]`                                         | Add a contact or a phone to an existing contact |
+| `change-phone [name] [old phone] [new phone]`                | Change a contact's phone                        |
+| `phone [name]`                                               | Show a contact's phones                         |
+| `all`                                                        | Show all contacts                               |
+| `add-birthday [name] [DD.MM.YYYY]`                           | Add a birthday to a contact                     |
+| `add-email [name] [email]`                                   | Add an email to a contact                       |
+| `add-address [name] [address]`                               | Add an address to a contact                     |
+| `show-birthday` / `show-email` / `show-address [name]`       | Show a contact's birthday / email / address     |
+| `remove [name]`                                              | Remove a contact                                |
+| `remove-phone [name] [phone]`                                | Remove a contact's phone                        |
+| `remove-birthday` / `remove-email` / `remove-address [name]` | Remove a contact's birthday / email / address   |
+| `help`                                                       | Show all commands                               |
+| `exit` / `close` / `bye` / `quit`                            | Save data and exit                              |
 
-_Contact and note commands will be documented here as they are implemented._
+_Note commands will be documented here as they are implemented._
 
 ## Project structure
 
@@ -75,12 +89,13 @@ python-core-final-project/
         ├── __init__.py
         ├── __main__.py            # enables `python -m personal_assistant`
         ├── main.py                # main loop: load data → read input → dispatch → save on exit
-        ├── exceptions.py          # custom exceptions (validation, not found, ...)
+        ├── exceptions.py          # custom exceptions (AssistantError, ValidationError, ...)
+        ├── constants.py           # shared constants (date format, email regex)
         │
         ├── models/                # domain classes — no input()/print() here
         │   ├── fields.py          # Field base class + Name, Phone, Email, Address, Birthday
-        │   ├── record.py          # Record: one contact, composed of fields
-        │   ├── address_book.py    # AddressBook: add, find, delete, upcoming birthdays
+        │   ├── contact.py         # Contact: one person, composed of fields
+        │   ├── contact_book.py    # ContactBook: add, find, delete contacts
         │   ├── note.py            # Note: text + tags
         │   └── note_book.py       # NoteBook: add, find, delete, search/sort by tags
         │
@@ -89,13 +104,13 @@ python-core-final-project/
         │
         └── cli/                   # everything related to user interaction
             ├── parser.py          # splits user input into command + arguments
-            ├── command.py         # Command(handler, usage, description) tuple
+            ├── command.py         # Command enum: keyword, usage, description, aliases
             ├── ui.py              # colors, banner, help table, message formatting
-            ├── decorators.py      # input_error: turns exceptions into user messages
+            ├── decorators.py      # handle_cmd_error: turns exceptions into user messages
             ├── general_commands.py  # hello
             ├── contact_commands.py  # contact command handlers + CONTACT_COMMANDS dict
             ├── note_commands.py     # note command handlers + NOTE_COMMANDS dict
-            └── registry.py        # merges all command dicts into one COMMANDS dict
+            └── registry.py        # merges all handler dicts into one COMMANDS dict
 ```
 
 ### How the layers work together
@@ -107,14 +122,15 @@ user input → main.py → parser → registry (COMMANDS) → handler in cli/ �
 - **`models/`** holds the data and business logic. Classes validate their own values and **raise exceptions** on invalid input. They never print or ask for input.
 - **`cli/`** connects the user to the models. Handlers take parsed arguments, call model methods and **return a string**. They don't print.
 - **`storage/`** is the only place that reads or writes files.
-- **`main.py`** only runs the loop. It handles `help` and `exit`/`close` itself, and looks up every other command in `COMMANDS`.
+- **`main.py`** only runs the loop. It parses the keyword into a `Command`, handles `help` and `exit` itself, and looks up every other command's handler in `COMMANDS`.
 
 ### Adding a new command
 
-1. Write a handler function in the matching module (`contact_commands.py` or `note_commands.py`). It takes the arguments and returns a string.
-2. Wrap it with the `@input_error` decorator.
-3. Add it to that module's commands dict with a short description.
-4. Add it to the **Usage** table in this README.
+1. Add a member to the `Command` enum in `cli/command.py`: `NAME = ("keyword", "usage", "description")` (optionally a tuple of aliases as the 4th item). It shows up in `help` automatically.
+2. Write a handler in the matching module (`contact_commands.py` or `note_commands.py`). It takes `(args, book)` and returns a string.
+3. Wrap it with `@handle_cmd_error(Command.NAME)` — validation errors are shown to the user, wrong arguments print the usage.
+4. Add `Command.NAME: handler` to that module's commands dict.
+5. Add it to the **Usage** table in this README.
 
 You don't need to change `main.py` to add a command.
 
