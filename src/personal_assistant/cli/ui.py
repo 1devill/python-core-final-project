@@ -1,11 +1,13 @@
 """Terminal output helpers: colors, banner, help table and messages."""
 
+from collections.abc import Iterable
+
 from colorama import Fore, Style
 
 from personal_assistant.cli.command import Command
+from personal_assistant.models.contact import Contact
 
 WIDTH = 52
-EXIT_COMMANDS = ("exit", "close")
 
 
 def banner() -> str:
@@ -32,11 +34,9 @@ def prompt() -> str:
     return f"\n{Fore.CYAN}{Style.BRIGHT}❯ {Style.RESET_ALL}"
 
 
-def help_table(commands: dict[str, Command]) -> str:
+def help_table(commands: Iterable[Command] = Command) -> str:
     """Return a formatted list of all commands with descriptions."""
-    rows = [(cmd.usage, cmd.description) for cmd in commands.values()]
-    rows.append(("help", "Show this help message"))
-    rows.append((" / ".join(EXIT_COMMANDS), "Save data and exit"))
+    rows = [(cmd.usage, cmd.description) for cmd in commands]
 
     usage_width = max(len(usage) for usage, _ in rows)
     lines = [f"{Style.BRIGHT}Available commands:{Style.RESET_ALL}"]
@@ -61,6 +61,46 @@ def error(message: str) -> str:
 def info(message: str) -> str:
     """Format a neutral informational message."""
     return f"{Fore.YELLOW}{message}{Style.RESET_ALL}"
+
+
+def highlight(text: object) -> str:
+    """Make text bold without resetting the surrounding color."""
+    return f"{Style.BRIGHT}{text}{Style.NORMAL}"
+
+
+def field(label: str, value: object) -> str:
+    """Format a 'Label: value' line with a colored label."""
+    return f"{Fore.CYAN}{label}:{Style.RESET_ALL} {value}"
+
+
+def contact_card(contact: Contact) -> str:
+    """Format one contact as a multi-line card."""
+    phones = ", ".join(str(phone) for phone in contact.phones)
+    lines = [
+        f"{Fore.CYAN}{Style.BRIGHT}● {contact.name}{Style.RESET_ALL}",
+        "  " + field("Phones", phones or f"{Style.DIM}-{Style.RESET_ALL}"),
+    ]
+    optional = (
+        ("Birthday", contact.birthday),
+        ("Email", contact.email),
+        ("Address", contact.address),
+    )
+    lines += ["  " + field(label, value) for label, value in optional if value]
+    return "\n".join(lines)
+
+
+def contact_list(contacts: Iterable[Contact]) -> str:
+    """Format all contacts as cards under a header with the total count."""
+    cards = [contact_card(contact) for contact in contacts]
+    if not cards:
+        return info("No contacts yet.")
+    header = f"{Style.BRIGHT}Contacts ({len(cards)}):{Style.RESET_ALL}"
+    return header + "\n" + "\n\n".join(cards)
+
+
+def greeting() -> str:
+    """Return the reply to the 'hello' command."""
+    return f"{Fore.MAGENTA}{Style.BRIGHT}👋 Hello! How can I help you today?"
 
 
 def goodbye() -> str:

@@ -5,15 +5,16 @@ from difflib import get_close_matches
 from colorama import init
 
 from personal_assistant.cli import ui
+from personal_assistant.cli.command import Command
 from personal_assistant.cli.parser import parse_input
 from personal_assistant.cli.registry import COMMANDS
+from personal_assistant.models.contact_book import ContactBook
 
 
-def unknown_command(command: str) -> str:
+def unknown_command(keyword: str) -> str:
     """Return an error message, suggesting a similar command if any."""
-    known = [*COMMANDS, "help", *ui.EXIT_COMMANDS]
-    matches = get_close_matches(command, known, n=1)
-    message = f"Unknown command '{command}'."
+    matches = get_close_matches(keyword, Command.keywords(), n=1)
+    message = f"Unknown command '{keyword}'."
     if matches:
         message += f" Did you mean '{matches[0]}'?"
     return ui.error(message) + "\n" + ui.info("Type 'help' to see commands.")
@@ -22,6 +23,7 @@ def unknown_command(command: str) -> str:
 def main() -> None:
     """Run the interactive command loop until the user exits."""
     init(autoreset=True)
+    book = ContactBook()
     print(ui.banner())
 
     while True:
@@ -31,20 +33,21 @@ def main() -> None:
             print()
             break
 
-        command, args = parse_input(user_input)
-
-        if not command:
+        keyword, args = parse_input(user_input)
+        if not keyword:
             continue
-        if command in ui.EXIT_COMMANDS:
+
+        command = Command.parse(keyword)
+        if command is Command.EXIT:
             break
-        if command == "help":
-            print(ui.help_table(COMMANDS))
+        if command is Command.HELP:
+            print(ui.help_table())
             continue
 
-        entry = COMMANDS.get(command)
-        if entry is None:
-            print(unknown_command(command))
+        handler = COMMANDS.get(command)
+        if handler is None:
+            print(unknown_command(keyword))
             continue
-        print(entry.handler(args))
+        print(handler(args, book))
 
     print(ui.goodbye())
