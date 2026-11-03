@@ -7,8 +7,10 @@ from colorama import init
 from personal_assistant.cli import ui
 from personal_assistant.cli.command import Command
 from personal_assistant.cli.parser import parse_input
+from personal_assistant.cli.note_commands import NOTE_COMMANDS
 from personal_assistant.cli.registry import COMMANDS
 from personal_assistant.models.contact_book import ContactBook
+from personal_assistant.models.note_book import NoteBook
 
 
 def unknown_command(keyword: str) -> str:
@@ -24,6 +26,7 @@ def main() -> None:
     """Run the interactive command loop until the user exits."""
     init(autoreset=True)
     book = ContactBook()
+    notes = NoteBook()
     print(ui.banner())
 
     while True:
@@ -48,6 +51,6 @@ def main() -> None:
         if handler is None:
             print(unknown_command(keyword))
             continue
-        print(handler(args, book))
+        print(handler(args, notes if command in NOTE_COMMANDS else book))
 
     print(ui.goodbye())

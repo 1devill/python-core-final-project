@@ -6,6 +6,7 @@ from colorama import Fore, Style
 
 from personal_assistant.cli.command import Command
 from personal_assistant.models.contact import Contact
+from personal_assistant.models.note import Note
 
 WIDTH = 52
 
@@ -95,6 +96,34 @@ def contact_list(contacts: Iterable[Contact]) -> str:
     if not cards:
         return info("No contacts yet.")
     header = f"{Style.BRIGHT}Contacts ({len(cards)}):{Style.RESET_ALL}"
+    return header + "\n" + "\n\n".join(cards)
+
+
+def note_card(note: Note) -> str:
+    """
+    one note as a card for output: name and #tags on the first line, text on the second
+    :param note: Note
+    :return: card: str
+    """
+    tags = ", ".join(f"#{tag}" for tag in note.tags)
+    return (
+        f"{Fore.CYAN}{Style.BRIGHT}● {note.name}{Style.RESET_ALL}"
+        f"  {Fore.MAGENTA}{tags}{Style.RESET_ALL}\n"
+        f"  {note.text}"
+    )
+
+
+def note_list(notes: Iterable[Note], title: str = "Notes") -> str:
+    """
+    notes as cards under a header with their count
+    :param notes: notes to show: Iterable[Note]
+    :param title: header text: str
+    :return: header and cards: str, or a message if there are no notes
+    """
+    cards = [note_card(note) for note in notes]
+    if not cards:
+        return info("No notes yet.")
+    header = f"{Style.BRIGHT}{title} ({len(cards)}):{Style.RESET_ALL}"
     return header + "\n" + "\n\n".join(cards)
 
 

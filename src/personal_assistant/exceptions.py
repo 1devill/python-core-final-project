@@ -15,3 +15,11 @@ class ContactDoesNotExist(AssistantError):
     def __init__(self, name: str):
         super().__init__(f"Contact '{name}' does not exist.")
         self.name = name
+
+
+class NoteDoesNotExist(AssistantError):
+    """Raised when a contact is not found in the book."""
+
+    def __init__(self, name: str):
+        super().__init__(f"Note '{name}' does not exist.")
+        self.name = name

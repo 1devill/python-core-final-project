@@ -71,10 +71,22 @@ The assistant runs in an interactive loop: type a command, press Enter, and it r
 | `remove [name]`                                              | Remove a contact                                |
 | `remove-phone [name] [phone]`                                | Remove a contact's phone                        |
 | `remove-birthday` / `remove-email` / `remove-address [name]` | Remove a contact's birthday / email / address   |
+| `add-note [name] [tag1,tag2] [text]`                         | Add a note (at least one tag, comma-separated)  |
+| `all-notes`                                                  | Show all notes                                  |
+| `find-notes [name=..] [tag=..] [text=..]`                    | Find notes matching all given filters           |
+| `sort-notes [tag]`                                           | Show all notes, the ones with `[tag]` first     |
+| `change-note-text [name] [text]`                             | Replace a note's text                           |
+| `add-note-tag [name] [tag]`                                  | Add a tag to a note                             |
+| `change-note-tag [name] [old tag] [new tag]`                 | Replace a note's tag                            |
+| `remove-note-tag [name] [tag]`                               | Remove a tag (the last one can't be removed)    |
+| `remove-note [name]`                                         | Remove a note                                   |
 | `help`                                                       | Show all commands                               |
 | `exit` / `close` / `bye` / `quit`                            | Save data and exit                              |
 
-_Note commands will be documented here as they are implemented._
+`find-notes` takes `key=value` filters, which become keyword arguments of `NoteBook.find`:
+`find-notes text=buy milk tag=home` → `book.find(text="buy milk", tag="home")`.
+Words without `=` belong to the previous filter, so text may contain spaces.
+Empty filters (`text=`) are rejected; nothing found (by any filter, name included) prints `No notes found.`
 
 ## Project structure
 
