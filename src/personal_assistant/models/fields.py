@@ -52,3 +52,25 @@ class Email(Field):
 
 class Address(Field):
     pass
+
+
+class Tag(Field):
+    """
+    note tag: stored in lowercase, must not be empty
+    """
+
+    def __init__(self, value: str) -> None:
+        if not value or value.strip() == "":
+            raise ValidationError(f"{self.__class__.__name__} Tag must not be empty")
+        super().__init__(value.lower())
+
+
+class Text(Field):
+    """
+    note text: must not be empty
+    """
+
+    def __init__(self, value: str) -> None:
+        if not value or value.strip() == "":
+            raise ValidationError(f"{self.__class__.__name__} Tag must not be empty")
+        super().__init__(value.lower())

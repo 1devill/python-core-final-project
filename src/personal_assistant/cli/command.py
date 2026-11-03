@@ -6,8 +6,9 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from personal_assistant.models.contact_book import ContactBook
+    from personal_assistant.models.note_book import NoteBook
 
-Handler = Callable[[list[str], "ContactBook"], str]
+Handler = Callable[[list[str], "ContactBook | NoteBook"], str]
 """A command handler: takes the arguments after the command and the book,
 returns a message to show the user."""
 
@@ -40,6 +41,11 @@ class Command(Enum):
         "add-address [name] [address]",
         "Add an address to a contact",
     )
+    ADD_NOTE = (
+        "add-note",
+        "add-note [name] [tag1,tag2] [text]",
+        "Add a note with comma-separated tags",
+    )
     REMOVE_CONTACT = (
         "remove",
         "remove [name]",
@@ -65,12 +71,51 @@ class Command(Enum):
         "remove-address [name]",
         "Remove a contact's address",
     )
+    REMOVE_NOTE = (
+        "remove-note",
+        "remove-note [name]",
+        "Remove a note",
+    )
+    REMOVE_NOTE_TAG = (
+        "remove-note-tag",
+        "remove-note-tag [name] [tag]",
+        "Remove a tag from a note",
+    )
+    ADD_NOTE_TAG = (
+        "add-note-tag",
+        "add-note-tag [name] [tag]",
+        "Add a tag to a note",
+    )
+    CHANGE_NOTE_TAG = (
+        "change-note-tag",
+        "change-note-tag [name] [old tag] [new tag]",
+        "Replace a note's tag",
+    )
+    CHANGE_NOTE_TEXT = (
+        "change-note-text",
+        "change-note-text [name] [text]",
+        "Change note text",
+    )
     CHANGE_PHONE = (
         "change-phone",
         "change-phone [name] [old phone] [new phone]",
         "Change a contact's phone",
     )
     ALL = ("all", "all", "Show all contacts")
+    ALL_NOTES = (
+        "all-notes",
+        "all-notes",
+        "Show all notes")
+    SORT_NOTES = (
+        "sort-notes",
+        "sort-notes [tag]",
+        "Show all notes, the ones with [tag] first",
+    )
+    FIND_NOTES = (
+        "find-notes",
+        "find-notes [name=..] [tag=..] [text=..]",
+        "Find notes matching all given filters",
+    )
     SHOW_PHONE = ("phone", "phone [name]", "Show a contact's phones")
     SHOW_BIRTHDAY = (
         "show-birthday",
@@ -96,7 +141,7 @@ class Command(Enum):
     )
 
     def __new__(
-        cls, keyword: str, usage: str, description: str, aliases: tuple[str, ...] = ()
+            cls, keyword: str, usage: str, description: str, aliases: tuple[str, ...] = ()
     ):
         obj = object.__new__(cls)
         obj._value_ = keyword
