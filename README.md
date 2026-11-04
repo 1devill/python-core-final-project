@@ -160,5 +160,5 @@ You don't need to change `main.py` to add a command.
 ## Team
 
 - Daniil Derbas
-- Leonid
+- Leonid Tsarov
 - Andrii Koptiev
