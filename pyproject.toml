@@ -17,6 +17,7 @@ dependencies = ["colorama>=0.4.6"]
 
 [project.optional-dependencies]
 dev = ["types-colorama"]
+ai = ["anthropic>=1.0", "python-dotenv>=1.0"]
 
 [project.scripts]
 assistant = "personal_assistant.main:main"
