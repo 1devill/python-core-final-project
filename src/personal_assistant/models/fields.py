@@ -1,9 +1,12 @@
 """Contact fields. Each field validates its own value."""
 
 import re
-from datetime import datetime
+from datetime import date, datetime
 
-from personal_assistant.constants import DATE_PARSE_FORMAT, EMAIL_REGEX
+from personal_assistant.constants import (
+    DATE_PARSE_FORMAT,
+    EMAIL_REGEX,
+)
 from personal_assistant.exceptions import ValidationError
 
 
@@ -29,6 +32,19 @@ class Birthday(Field):
         except ValueError:
             raise ValidationError(f"Invalid date format. Use {Birthday.FORMAT}")
         super().__init__(value)
+
+    def next_occurrence(self, today: date) -> date:
+        birthday = self._get_next_birthday_date(self.bd_date, today.year)
+        if birthday < today:
+            return self._get_next_birthday_date(self.bd_date, today.year + 1)
+        return birthday
+
+    @staticmethod
+    def _get_next_birthday_date(date_of_birth: date, year: int) -> date:
+        try:
+            return date_of_birth.replace(year=year)
+        except ValueError:  # 29 February in a non-leap year moved to March 1
+            return date(year, 3, 1)
 
 
 class Phone(Field):

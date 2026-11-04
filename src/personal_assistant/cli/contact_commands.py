@@ -60,7 +60,7 @@ def get_phones(args: list[str], book: ContactBook) -> str:
     return ui.field("Phones", ", ".join(str(phone) for phone in contact.phones))
 
 
-def show_all(args: list[str], book: ContactBook) -> str:
+def show_all(_, book: ContactBook) -> str:
     return ui.contact_list(book.values())
 
 
@@ -151,6 +151,12 @@ def remove_address(args: list[str], book: ContactBook) -> str:
     return ui.success(f"{ui.highlight(name)}'s address was removed.")
 
 
+@handle_cmd_error(Command.SHOW_UPCOMING_BIRTHDAYS)
+def get_upcoming_birthdays(args: list[str], book: ContactBook) -> str:
+    (days,) = args
+    return ui.birthday_list(book.find_upcoming_birthdays(int(days)))
+
+
 CONTACT_COMMANDS: dict[Command, Handler] = {
     Command.ADD: add_contact,
     Command.CHANGE_PHONE: update_contact_phone,
@@ -167,4 +173,5 @@ CONTACT_COMMANDS: dict[Command, Handler] = {
     Command.REMOVE_BIRTHDAY: remove_birthday,
     Command.REMOVE_EMAIL: remove_email,
     Command.REMOVE_PHONE: remove_phone,
+    Command.SHOW_UPCOMING_BIRTHDAYS: get_upcoming_birthdays,
 }

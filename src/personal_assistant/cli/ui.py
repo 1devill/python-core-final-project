@@ -1,11 +1,15 @@
 """Terminal output helpers: colors, banner, help table and messages."""
 
 from collections.abc import Iterable
+from datetime import date
+from typing import Optional
 
 from colorama import Fore, Style
 
 from personal_assistant.cli.command import Command
+from personal_assistant.constants import DATE_PARSE_FORMAT
 from personal_assistant.models.contact import Contact
+from personal_assistant.models.contact_book import UpcomingBirthday
 from personal_assistant.models.note import Note
 
 WIDTH = 52
@@ -74,17 +78,21 @@ def field(label: str, value: object) -> str:
     return f"{Fore.CYAN}{label}:{Style.RESET_ALL} {value}"
 
 
-def contact_card(contact: Contact) -> str:
+def contact_card(contact: Contact, next_birthday: Optional[date] = None) -> str:
     """Format one contact as a multi-line card."""
     phones = ", ".join(str(phone) for phone in contact.phones)
     lines = [
         f"{Fore.CYAN}{Style.BRIGHT}● {contact.name}{Style.RESET_ALL}",
         "  " + field("Phones", phones or f"{Style.DIM}-{Style.RESET_ALL}"),
     ]
+    next_birthday_date = (
+        next_birthday.strftime(DATE_PARSE_FORMAT) if next_birthday else None
+    )
     optional = (
-        ("Birthday", contact.birthday),
+        ("Birthday date", contact.birthday),
         ("Email", contact.email),
         ("Address", contact.address),
+        ("Next birthday", next_birthday_date),
     )
     lines += ["  " + field(label, value) for label, value in optional if value]
     return "\n".join(lines)
@@ -135,3 +143,14 @@ def greeting() -> str:
 def goodbye() -> str:
     """Return the farewell message."""
     return f"{Fore.MAGENTA}{Style.BRIGHT}👋 Goodbye! See you next time."
+
+
+def birthday_list(upcoming_birthdays: Iterable[UpcomingBirthday]) -> str:
+    """Format all upcoming birthdays list as cards under a header with the total count."""
+    cards = [
+        contact_card(birthday.contact, birthday.date) for birthday in upcoming_birthdays
+    ]
+    if not cards:
+        return info("No upcoming birthdays found.")
+    header = f"{Style.BRIGHT}Upcoming birthdays ({len(cards)}):{Style.RESET_ALL}"
+    return header + "\n" + "\n\n".join(cards)
