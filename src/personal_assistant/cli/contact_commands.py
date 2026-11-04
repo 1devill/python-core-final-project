@@ -3,6 +3,7 @@
 from personal_assistant.cli import ui
 from personal_assistant.cli.command import Command, Handler
 from personal_assistant.cli.decorators import handle_cmd_error
+from personal_assistant.exceptions import ValidationError
 from personal_assistant.models.contact import Contact
 from personal_assistant.models.contact_book import ContactBook
 
@@ -60,7 +61,7 @@ def get_phones(args: list[str], book: ContactBook) -> str:
     return ui.field("Phones", ", ".join(str(phone) for phone in contact.phones))
 
 
-def show_all(_, book: ContactBook) -> str:
+def show_all(args: list[str], book: ContactBook) -> str:
     return ui.contact_list(book.values())
 
 
@@ -154,7 +155,10 @@ def remove_address(args: list[str], book: ContactBook) -> str:
 @handle_cmd_error(Command.SHOW_UPCOMING_BIRTHDAYS)
 def get_upcoming_birthdays(args: list[str], book: ContactBook) -> str:
     (days,) = args
-    return ui.birthday_list(book.find_upcoming_birthdays(int(days)))
+    days_interval = int(days)
+    if days_interval < 0:
+        raise ValidationError("Days must be 0 or more")
+    return ui.birthday_list(book.find_upcoming_birthdays(days_interval))
 
 
 CONTACT_COMMANDS: dict[Command, Handler] = {

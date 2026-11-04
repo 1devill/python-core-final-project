@@ -102,7 +102,10 @@ class Command(Enum):
         "Change a contact's phone",
     )
     ALL = ("all", "all", "Show all contacts")
-    ALL_NOTES = ("all-notes", "all-notes", "Show all notes")
+    ALL_NOTES = (
+        "all-notes",
+        "all-notes",
+        "Show all notes")
     SORT_NOTES = (
         "sort-notes",
         "sort-notes [tag]",
@@ -143,7 +146,7 @@ class Command(Enum):
     )
 
     def __new__(
-        cls, keyword: str, usage: str, description: str, aliases: tuple[str, ...] = ()
+            cls, keyword: str, usage: str, description: str, aliases: tuple[str, ...] = ()
     ):
         obj = object.__new__(cls)
         obj._value_ = keyword

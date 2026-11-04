@@ -1,12 +1,16 @@
 """ContactBook: stores contacts by name."""
 
-from collections import UserDict, namedtuple
+from collections import UserDict
 from datetime import date
+from typing import NamedTuple
 
 from personal_assistant.exceptions import ContactDoesNotExist, ValidationError
 from personal_assistant.models.contact import Contact
 
-UpcomingBirthday = namedtuple("UpcomingBirthday", ["contact", "date"])
+
+class UpcomingBirthday(NamedTuple):
+    contact: Contact
+    next_birthday: date
 
 
 class ContactBook(UserDict[str, Contact]):
@@ -41,12 +45,9 @@ class ContactBook(UserDict[str, Contact]):
         for contact in self.data.values():
             if contact.birthday is None:
                 continue
-            else:
-                next_birthday = contact.birthday.next_occurrence(today)
-                upcoming_birthday = UpcomingBirthday(
-                    contact=contact, date=next_birthday
-                )
-                if 0 <= (next_birthday - today).days <= days_interval:
-                    upcoming_birthdays.append(upcoming_birthday)
 
-        return sorted(upcoming_birthdays, key=lambda contact: contact.date)
+            next_birthday = contact.birthday.next_occurrence(today)
+            if 0 <= (next_birthday - today).days <= days_interval:
+                upcoming_birthdays.append(UpcomingBirthday(contact, next_birthday))
+
+        return sorted(upcoming_birthdays, key=lambda upcoming: upcoming.next_birthday)

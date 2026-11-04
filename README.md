@@ -13,7 +13,7 @@ Team project for the Neoversity course _Python Programming: Foundations and Best
 - Validate phone numbers and emails on create/edit
 - Search contacts (by name and other fields)
 - Edit and delete contacts
-- Show contacts with a birthday in the next N days
+- Show contacts with a birthday within the next N days
 
 ### Notes
 
@@ -68,6 +68,7 @@ The assistant runs in an interactive loop: type a command, press Enter, and it r
 | `add-email [name] [email]`                                   | Add an email to a contact                       |
 | `add-address [name] [address]`                               | Add an address to a contact                     |
 | `show-birthday` / `show-email` / `show-address [name]`       | Show a contact's birthday / email / address     |
+| `show-upcoming-birthdays [days]`                             | Show birthdays within the next N days           |
 | `remove [name]`                                              | Remove a contact                                |
 | `remove-phone [name] [phone]`                                | Remove a contact's phone                        |
 | `remove-birthday` / `remove-email` / `remove-address [name]` | Remove a contact's birthday / email / address   |

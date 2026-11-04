@@ -3,10 +3,7 @@
 import re
 from datetime import date, datetime
 
-from personal_assistant.constants import (
-    DATE_PARSE_FORMAT,
-    EMAIL_REGEX,
-)
+from personal_assistant.constants import DATE_PARSE_FORMAT, EMAIL_REGEX
 from personal_assistant.exceptions import ValidationError
 
 

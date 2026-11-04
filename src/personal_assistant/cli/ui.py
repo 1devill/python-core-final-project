@@ -2,7 +2,6 @@
 
 from collections.abc import Iterable
 from datetime import date
-from typing import Optional
 
 from colorama import Fore, Style
 
@@ -78,7 +77,7 @@ def field(label: str, value: object) -> str:
     return f"{Fore.CYAN}{label}:{Style.RESET_ALL} {value}"
 
 
-def contact_card(contact: Contact, next_birthday: Optional[date] = None) -> str:
+def contact_card(contact: Contact, next_birthday: date | None = None) -> str:
     """Format one contact as a multi-line card."""
     phones = ", ".join(str(phone) for phone in contact.phones)
     lines = [
@@ -89,7 +88,7 @@ def contact_card(contact: Contact, next_birthday: Optional[date] = None) -> str:
         next_birthday.strftime(DATE_PARSE_FORMAT) if next_birthday else None
     )
     optional = (
-        ("Birthday date", contact.birthday),
+        ("Birthday", contact.birthday),
         ("Email", contact.email),
         ("Address", contact.address),
         ("Next birthday", next_birthday_date),
@@ -148,7 +147,8 @@ def goodbye() -> str:
 def birthday_list(upcoming_birthdays: Iterable[UpcomingBirthday]) -> str:
     """Format all upcoming birthdays list as cards under a header with the total count."""
     cards = [
-        contact_card(birthday.contact, birthday.date) for birthday in upcoming_birthdays
+        contact_card(birthday.contact, birthday.next_birthday)
+        for birthday in upcoming_birthdays
     ]
     if not cards:
         return info("No upcoming birthdays found.")
