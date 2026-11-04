@@ -3,40 +3,11 @@
 from personal_assistant.cli import ui
 from personal_assistant.cli.command import Command, Handler
 from personal_assistant.cli.decorators import handle_cmd_error
-from personal_assistant.exceptions import ValidationError
+from personal_assistant.cli.parser import parse_filters
 from personal_assistant.models.note import Note
 from personal_assistant.models.note_book import NoteBook
 
 SEARCH_KEYS = ("name", "tag", "text")
-
-
-def parse_filters(args: list[str]) -> dict[str, str]:
-    """
-    turn find-notes args into kwargs for NoteBook.find:
-    ["text=buy", "milk", "tag=home"] -> {"text": "buy milk", "tag": "home"};
-    words without "=" belong to the previous key, so text may contain spaces
-    :param args: command args: list[str]
-    :return: filters: dict[str, str]; raises ValueError if there are no args (handle_cmd_error shows the usage),
-        ValidationError for an unknown or repeated key or a word before the first key (its text is shown)
-    """
-    filters: dict[str, list[str]] = {}
-    key = None
-    for word in args:
-        candidate, sep, value = word.partition("=")
-        if sep and candidate.lower() in SEARCH_KEYS:
-            key = candidate.lower()
-            if key in filters:
-                raise ValidationError(f"Filter '{key}' is given twice")
-            filters[key] = [value] if value else []
-        elif key is None:
-            raise ValidationError(
-                f"Unexpected '{word}'. Filters: {', '.join(k + '=..' for k in SEARCH_KEYS)}"
-            )
-        else:
-            filters[key].append(word)
-    if not args:
-        raise ValueError("At least one filter is required")
-    return {key: " ".join(words) for key, words in filters.items()}
 
 
 @handle_cmd_error(Command.ADD_NOTE)
@@ -164,7 +135,7 @@ def find_notes(args: list[str], book: NoteBook) -> str:
     :return: found note cards, or a message if nothing is found; no filters (ValueError)
         and bad or empty filters (ValidationError) are handled by handle_cmd_error
     """
-    found = book.find(**parse_filters(args))
+    found = book.find(**parse_filters(args, SEARCH_KEYS))
     if not found:
         return ui.info("No notes found.")
     return ui.note_list(found, title="Found notes")

@@ -3,9 +3,12 @@
 from personal_assistant.cli import ui
 from personal_assistant.cli.command import Command, Handler
 from personal_assistant.cli.decorators import handle_cmd_error
+from personal_assistant.cli.parser import parse_filters
 from personal_assistant.exceptions import ValidationError
 from personal_assistant.models.contact import Contact
 from personal_assistant.models.contact_book import ContactBook
+
+SEARCH_KEYS = ("name", "phone", "email", "address")
 
 
 def normalize_name(name: str) -> str:
@@ -161,6 +164,14 @@ def get_upcoming_birthdays(args: list[str], book: ContactBook) -> str:
     return ui.birthday_list(book.find_upcoming_birthdays(days_interval))
 
 
+@handle_cmd_error(Command.FIND_CONTACTS)
+def find_contacts(args: list[str], book: ContactBook) -> str:
+    found = book.search_contacts(**parse_filters(args, SEARCH_KEYS))
+    if not found:
+        return ui.info("No contacts found.")
+    return ui.contact_list(found, title="Found contacts")
+
+
 CONTACT_COMMANDS: dict[Command, Handler] = {
     Command.ADD: add_contact,
     Command.CHANGE_PHONE: update_contact_phone,
@@ -178,4 +189,5 @@ CONTACT_COMMANDS: dict[Command, Handler] = {
     Command.REMOVE_EMAIL: remove_email,
     Command.REMOVE_PHONE: remove_phone,
     Command.SHOW_UPCOMING_BIRTHDAYS: get_upcoming_birthdays,
+    Command.FIND_CONTACTS: find_contacts,
 }

@@ -97,12 +97,12 @@ def contact_card(contact: Contact, next_birthday: date | None = None) -> str:
     return "\n".join(lines)
 
 
-def contact_list(contacts: Iterable[Contact]) -> str:
-    """Format all contacts as cards under a header with the total count."""
+def contact_list(contacts: Iterable[Contact], title: str = "Contacts") -> str:
+    """Format contacts as cards under a header with the total count."""
     cards = [contact_card(contact) for contact in contacts]
     if not cards:
         return info("No contacts yet.")
-    header = f"{Style.BRIGHT}Contacts ({len(cards)}):{Style.RESET_ALL}"
+    header = f"{Style.BRIGHT}{title} ({len(cards)}):{Style.RESET_ALL}"
     return header + "\n" + "\n\n".join(cards)
 
 

@@ -64,6 +64,7 @@ The assistant runs in an interactive loop: type a command, press Enter, and it r
 | `change-phone [name] [old phone] [new phone]`                | Change a contact's phone                        |
 | `phone [name]`                                               | Show a contact's phones                         |
 | `all`                                                        | Show all contacts                               |
+| `find-contacts [name=..] [phone=..] [email=..] [address=..]` | Find contacts matching all given filters        |
 | `add-birthday [name] [DD.MM.YYYY]`                           | Add a birthday to a contact                     |
 | `add-email [name] [email]`                                   | Add an email to a contact                       |
 | `add-address [name] [address]`                               | Add an address to a contact                     |
@@ -83,6 +84,9 @@ The assistant runs in an interactive loop: type a command, press Enter, and it r
 | `remove-note [name]`                                         | Remove a note                                   |
 | `help`                                                       | Show all commands                               |
 | `exit` / `close` / `bye` / `quit`                            | Save data and exit                              |
+
+`find-contacts` matches part of a value, in any case, and a phone matches if any of the contact's phones contains it:
+`find-contacts name=an address=Kyiv Main St` shows contacts matching both filters.
 
 `find-notes` takes `key=value` filters, which become keyword arguments of `NoteBook.find`:
 `find-notes text=buy milk tag=home` → `book.find(text="buy milk", tag="home")`.
@@ -116,7 +120,7 @@ python-core-final-project/
         │   └── storage.py         # save/load data in ~/.personal_assistant/
         │
         └── cli/                   # everything related to user interaction
-            ├── parser.py          # splits user input into command + arguments
+            ├── parser.py          # splits user input into command + arguments, parses search filters
             ├── command.py         # Command enum: keyword, usage, description, aliases
             ├── ui.py              # colors, banner, help table, message formatting
             ├── decorators.py      # handle_cmd_error: turns exceptions into user messages

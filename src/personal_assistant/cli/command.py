@@ -116,6 +116,11 @@ class Command(Enum):
         "find-notes [name=..] [tag=..] [text=..]",
         "Find notes matching all given filters",
     )
+    FIND_CONTACTS = (
+        "find-contacts",
+        "find-contacts [name=..] [phone=..] [email=..] [address=..]",
+        "Find contacts matching all given filters",
+    )
     SHOW_PHONE = ("phone", "phone [name]", "Show a contact's phones")
     SHOW_BIRTHDAY = (
         "show-birthday",
