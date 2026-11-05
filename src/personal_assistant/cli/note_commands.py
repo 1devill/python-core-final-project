@@ -10,6 +10,17 @@ from .command import Command, Handler
 SEARCH_KEYS = ("name", "tag", "text")
 
 
+def strip_brackets(tags: str) -> str:
+    """
+    remove the brackets around tags typed from the usage hint: "[a,b]" -> "a,b".
+    Done here and not in Tag: Tag also runs when notes are loaded from the file,
+    where a note saved with such tags would turn invalid and be dropped
+    :param tags: tag or comma-separated tags as typed: str
+    :return: tags without the surrounding brackets: str
+    """
+    return tags.strip("[]")
+
+
 def parse_filters(args: list[str]) -> dict[str, str]:
     """
     turn find-notes args into kwargs for NoteBook.find:
@@ -50,7 +61,7 @@ def add_note(args: list[str], book: NoteBook) -> str:
         are handled by handle_cmd_error
     """
     name, tags, *text_parts = args
-    note = Note(name, tags.split(","), " ".join(text_parts))
+    note = Note(name, strip_brackets(tags).split(","), " ".join(text_parts))
     book.add_note(note)
     tags = ", ".join(f"#{tag}" for tag in note.tags)
     return success(f"Note '{highlight(note.name)}' added with tags {tags}.")
@@ -80,6 +91,7 @@ def add_note_tag(args: list[str], book: NoteBook) -> str:
         and wrong args (ValueError) are handled by handle_cmd_error
     """
     name, tag = args
+    tag = strip_brackets(tag)
     note = book.get_note(name)
     note.edit_tag(tag)
     return success(f"Tag '{tag.lower()}' added to '{highlight(note.name)}'.")
@@ -96,6 +108,7 @@ def change_note_tag(args: list[str], book: NoteBook) -> str:
         and wrong args (ValueError) are handled by handle_cmd_error
     """
     name, old_tag, new_tag = args
+    new_tag = strip_brackets(new_tag)
     note = book.get_note(name)
     note.edit_tag(new_tag, old_tag)
     return success(
