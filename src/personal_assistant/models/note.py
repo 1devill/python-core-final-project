@@ -1,7 +1,8 @@
 """Note: a named text with one or more tags."""
 
 from personal_assistant.exceptions import ValidationError
-from personal_assistant.models.fields import Name, Tag, Text
+
+from .fields import Name, Tag, Text
 
 
 class Note:

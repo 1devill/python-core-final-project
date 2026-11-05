@@ -10,12 +10,10 @@ records are skipped one by one instead of crashing.
 import io
 import os
 import pickle
+
 from pathlib import Path
 
-from personal_assistant.models.contact import Contact
-from personal_assistant.models.contact_book import ContactBook
-from personal_assistant.models.note import Note
-from personal_assistant.models.note_book import NoteBook
+from personal_assistant.models import Contact, ContactBook, Note, NoteBook
 
 DATA_DIR = Path.home() / ".personal_assistant"
 DATA_FILE = DATA_DIR / "data.pkl"

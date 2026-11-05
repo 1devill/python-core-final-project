@@ -1,15 +1,17 @@
 """General commands that are not tied to contacts or notes."""
 
-from personal_assistant.cli import ui
-from personal_assistant.cli.command import Command, Handler
-from personal_assistant.models.contact_book import ContactBook
+from personal_assistant.models import ContactBook, NoteBook
+
+import ui
+
+from .command import Command, Handler
 
 
-def hello(_: list[str], __: ContactBook) -> str:
+def hello(_: list[str], __: ContactBook | NoteBook) -> str:
     """Return a greeting message."""
     return ui.greeting()
 
 
-GENERAL_COMMANDS: dict[Command, Handler] = {
+GENERAL_COMMANDS: dict[Command, Handler[ContactBook | NoteBook]] = {
     Command.HELLO: hello,
 }

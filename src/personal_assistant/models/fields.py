@@ -1,6 +1,7 @@
 """Contact fields. Each field validates its own value."""
 
 import re
+
 from datetime import datetime
 
 from personal_assistant.constants import DATE_PARSE_FORMAT, EMAIL_REGEX

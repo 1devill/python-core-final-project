@@ -1,10 +1,11 @@
 """Contact command handlers and the CONTACT_COMMANDS dict."""
 
-from personal_assistant.cli import ui
-from personal_assistant.cli.command import Command, Handler
-from personal_assistant.cli.decorators import handle_cmd_error
-from personal_assistant.models.contact import Contact
-from personal_assistant.models.contact_book import ContactBook
+from personal_assistant.models import Contact, ContactBook
+
+import ui
+
+from .decorators import handle_cmd_error
+from .command import Command, Handler
 
 
 def normalize_name(name: str) -> str:
@@ -151,7 +152,7 @@ def remove_address(args: list[str], book: ContactBook) -> str:
     return ui.success(f"{ui.highlight(name)}'s address was removed.")
 
 
-CONTACT_COMMANDS: dict[Command, Handler] = {
+CONTACT_COMMANDS: dict[Command, Handler[ContactBook]] = {
     Command.ADD: add_contact,
     Command.CHANGE_PHONE: update_contact_phone,
     Command.SHOW_PHONE: get_phones,

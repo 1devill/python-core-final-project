@@ -1,17 +1,11 @@
 """Main entry point and command loop of the Personal Assistant."""
 
 from difflib import get_close_matches
-
 from colorama import init
 
-from personal_assistant.cli import ai_parser, ui
-from personal_assistant.cli.command import Command
-from personal_assistant.cli.parser import parse_input
-from personal_assistant.cli.note_commands import NOTE_COMMANDS
-from personal_assistant.cli.registry import COMMANDS
-from personal_assistant.models.contact_book import ContactBook
-from personal_assistant.models.note_book import NoteBook
-from personal_assistant.storage.storage import Storage
+from personal_assistant.cli import ui, ai_parser, Command, parse_input, NOTE_COMMANDS, COMMANDS
+from personal_assistant.models import ContactBook, NoteBook
+from personal_assistant.storage import Storage
 
 
 def unknown_command(keyword: str) -> str:

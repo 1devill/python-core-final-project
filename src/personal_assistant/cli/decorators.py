@@ -2,9 +2,11 @@
 
 from functools import wraps
 
-from personal_assistant.cli import ui
-from personal_assistant.cli.command import Command
 from personal_assistant.exceptions import AssistantError
+
+import ui
+
+from .command import Command
 
 
 def handle_cmd_error(command: Command):

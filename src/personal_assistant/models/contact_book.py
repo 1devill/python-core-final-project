@@ -3,7 +3,8 @@
 from collections import UserDict
 
 from personal_assistant.exceptions import ContactDoesNotExist, ValidationError
-from personal_assistant.models.contact import Contact
+
+from .contact import Contact
 
 
 class ContactBook(UserDict):

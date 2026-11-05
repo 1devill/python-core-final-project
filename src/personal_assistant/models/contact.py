@@ -1,7 +1,8 @@
 """Contact: one person in the book, composed of fields."""
 
 from personal_assistant.exceptions import ValidationError
-from personal_assistant.models.fields import Address, Birthday, Email, Name, Phone
+
+from .fields import Address, Birthday, Email, Name, Phone
 
 
 class Contact:
