@@ -3,7 +3,7 @@
 from difflib import get_close_matches
 from colorama import init
 
-from personal_assistant.cli import ui, Command, parse_input, NOTE_COMMANDS, COMMANDS
+from personal_assistant.cli import ui, ai_parser, Command, parse_input, NOTE_COMMANDS, COMMANDS
 from personal_assistant.models import ContactBook, NoteBook
 from personal_assistant.storage import Storage
 
