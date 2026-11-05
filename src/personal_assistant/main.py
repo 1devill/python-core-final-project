@@ -3,8 +3,7 @@
 from colorama import init
 from difflib import get_close_matches
 
-from personal_assistant.cli.ui import banner, error, goodbye, help_table, info, prompt
-from personal_assistant.cli import Command, parse_input, NOTE_COMMANDS, COMMANDS
+from personal_assistant.cli import ui, Command, parse_input, NOTE_COMMANDS, COMMANDS
 from personal_assistant.models import ContactBook, NoteBook
 from personal_assistant.storage import Storage
 
@@ -15,7 +14,7 @@ def unknown_command(keyword: str) -> str:
     message = f"Unknown command '{keyword}'."
     if matches:
         message += f" Did you mean '{matches[0]}'?"
-    return error(message) + "\n" + info("Type 'help' to see commands.")
+    return ui.error(message) + "\n" + ui.info("Type 'help' to see commands.")
 
 
 def main() -> None:
@@ -23,22 +22,22 @@ def main() -> None:
     init(autoreset=True)
     storage = Storage()
     book, notes, warnings = storage.load()
-    print(banner())
+    print(ui.banner())
     for warning in warnings:
-        print(error(warning))
+        print(ui.error(warning))
 
     try:
         run_loop(book, notes)
     finally:
         storage.save(book, notes)
-    print(goodbye())
+    print(ui.goodbye())
 
 
 def run_loop(book: ContactBook, notes: NoteBook) -> None:
     """Read and execute commands until the user exits."""
     while True:
         try:
-            user_input = input(prompt())
+            user_input = input(ui.prompt())
         except (KeyboardInterrupt, EOFError):
             print()
             break
@@ -54,7 +53,7 @@ def run_loop(book: ContactBook, notes: NoteBook) -> None:
         if command is Command.EXIT:
             break
         if command is Command.HELP:
-            print(help_table())
+            print(ui.help_table())
             continue
 
         handler = COMMANDS[command]
