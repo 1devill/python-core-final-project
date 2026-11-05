@@ -84,7 +84,12 @@ def test_save_replaces_old_data(storage):
 
 @pytest.mark.parametrize(
     "data",
-    [b"not a pickle", b"\x80\x04garbage", pickle.dumps(["a", "list"]), pickle.dumps(42)],
+    [
+        b"not a pickle",
+        b"\x80\x04garbage",
+        pickle.dumps(["a", "list"]),
+        pickle.dumps(42),
+    ],
     ids=["text", "broken-pickle", "list", "number"],
 )
 def test_broken_file_gives_a_warning_and_empty_books(storage, path, data):
@@ -94,7 +99,9 @@ def test_broken_file_gives_a_warning_and_empty_books(storage, path, data):
     assert len(warnings) == 1
 
 
-@pytest.mark.xfail(strict=True, reason="BUG: a broken data file is overwritten on load, no backup")
+@pytest.mark.xfail(
+    strict=True, reason="BUG: a broken data file is overwritten on load, no backup"
+)
 def test_broken_file_is_not_destroyed(storage, path):
     write_raw(path, b"not a pickle")
     storage.load()

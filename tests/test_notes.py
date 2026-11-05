@@ -41,8 +41,22 @@ class TestNote:
 
     @pytest.mark.parametrize(
         "new, old",
-        [("home", None), ("HOME", None), ("a", "a"), ("a", "A"), ("x", "y"), ("food", "home")],
-        ids=["add-dup", "add-dup-case", "same", "same-case", "old-missing", "new-exists"],
+        [
+            ("home", None),
+            ("HOME", None),
+            ("a", "a"),
+            ("a", "A"),
+            ("x", "y"),
+            ("food", "home"),
+        ],
+        ids=[
+            "add-dup",
+            "add-dup-case",
+            "same",
+            "same-case",
+            "old-missing",
+            "new-exists",
+        ],
     )
     def test_edit_tag_failure_changes_nothing(self, note, new, old):
         with pytest.raises(ValidationError):

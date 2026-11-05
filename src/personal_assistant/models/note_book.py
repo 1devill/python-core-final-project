@@ -11,6 +11,7 @@ class NoteBook(UserDict):
     """
     note book: notes stored in self.data by note name (capitalized)
     """
+
     data: dict[str, Note]
 
     def __str__(self) -> str:

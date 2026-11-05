@@ -34,7 +34,14 @@ def test_data_survives_a_restart(app):
     )
     result = app("all", "all-notes", "find-contacts address=kyiv")
     assert result.returncode == 0
-    for expected in ("29.02.2000", "a@b.co", "Kyiv Main St", "#food", "buy milk", "Found contacts (1)"):
+    for expected in (
+        "29.02.2000",
+        "a@b.co",
+        "Kyiv Main St",
+        "#food",
+        "buy milk",
+        "Found contacts (1)",
+    ):
         assert expected in result.stdout
 
 
@@ -85,10 +92,17 @@ def test_failed_save_on_exit_does_not_crash(app):
     assert "Traceback" not in result.stderr
 
 
-@pytest.mark.xfail(strict=True, reason="BUG: data is saved only on exit, a killed app loses it")
+@pytest.mark.xfail(
+    strict=True, reason="BUG: data is saved only on exit, a killed app loses it"
+)
 @pytest.mark.skipif(sys.platform == "win32", reason="needs POSIX signals")
 def test_killed_app_keeps_finished_commands(app):
-    env = {**os.environ, "HOME": str(app.home), "PYTHONPATH": str(SRC_DIR), "PYTHONUNBUFFERED": "1"}
+    env = {
+        **os.environ,
+        "HOME": str(app.home),
+        "PYTHONPATH": str(SRC_DIR),
+        "PYTHONUNBUFFERED": "1",
+    }
     process = subprocess.Popen(
         [sys.executable, "-m", "personal_assistant"],
         stdin=subprocess.PIPE,

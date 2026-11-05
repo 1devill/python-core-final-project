@@ -2,9 +2,9 @@
 
 import pytest
 
+from conftest import plain
 from personal_assistant.cli import COMMANDS, Command, ai_parser
 from personal_assistant.main import unknown_command
-from conftest import plain
 
 LOOP_COMMANDS = {Command.HELP, Command.EXIT}
 HANDLED = [command for command in Command if command not in LOOP_COMMANDS]
@@ -87,7 +87,9 @@ class TestContactCommands:
         assert "Phone added" in run("add ANNA 0987654321")
         assert len(book["Anna"].phones) == 2
 
-    @pytest.mark.xfail(strict=True, reason="BUG: extra words after the phone are ignored")
+    @pytest.mark.xfail(
+        strict=True, reason="BUG: extra words after the phone are ignored"
+    )
     def test_add_rejects_extra_arguments(self, run, book):
         run("add anna 0123456789 0987654321")
         assert len(book) == 0 or len(book["Anna"].phones) == 2
@@ -134,8 +136,15 @@ class TestContactCommands:
 
 
 class TestUpcomingBirthdaysCommand:
-    @pytest.mark.parametrize("line", ["show-upcoming-birthdays", "show-upcoming-birthdays abc",
-                                      "show-upcoming-birthdays 1.5", "show-upcoming-birthdays 1 2"])
+    @pytest.mark.parametrize(
+        "line",
+        [
+            "show-upcoming-birthdays",
+            "show-upcoming-birthdays abc",
+            "show-upcoming-birthdays 1.5",
+            "show-upcoming-birthdays 1 2",
+        ],
+    )
     def test_bad_days_show_usage(self, run, line):
         assert run(line).endswith(f"Usage: {Command.SHOW_UPCOMING_BIRTHDAYS.usage}")
 
@@ -196,7 +205,9 @@ class TestNoteCommands:
         assert "must not be empty" in run(line)
         assert len(notes) == 0
 
-    @pytest.mark.xfail(strict=True, reason="BUG: brackets are stripped only when adding a tag")
+    @pytest.mark.xfail(
+        strict=True, reason="BUG: brackets are stripped only when adding a tag"
+    )
     @pytest.mark.parametrize(
         "line",
         ["remove-note-tag shop [home]", "change-note-tag shop [home] office"],
@@ -206,7 +217,9 @@ class TestNoteCommands:
         run("add-note shop home,food buy milk")
         assert "not found" not in run(line)
 
-    @pytest.mark.xfail(strict=True, reason="BUG: brackets are stripped only when adding a tag")
+    @pytest.mark.xfail(
+        strict=True, reason="BUG: brackets are stripped only when adding a tag"
+    )
     def test_sort_notes_accepts_brackets(self, run):
         run("add-note alpha other text")
         run("add-note shop home text")

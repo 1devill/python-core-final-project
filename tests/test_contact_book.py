@@ -60,7 +60,9 @@ class TestUpcomingBirthdays:
             ("09.06.1990", 363, False),
         ],
     )
-    def test_window_edges(self, book, make_contact, freeze_today, birthday, days, found):
+    def test_window_edges(
+        self, book, make_contact, freeze_today, birthday, days, found
+    ):
         freeze_today(2026, 6, 10)
         make_contact("anna", birthday=birthday)
         assert upcoming(book, days) == (["Anna"] if found else [])

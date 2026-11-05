@@ -5,7 +5,6 @@ from functools import wraps
 from personal_assistant.exceptions import AssistantError
 
 from . import ui
-
 from .command import Command
 
 

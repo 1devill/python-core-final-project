@@ -3,7 +3,6 @@
 from personal_assistant.models import ContactBook, NoteBook
 
 from . import ui
-
 from .command import Command, Handler
 
 

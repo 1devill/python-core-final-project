@@ -10,7 +10,6 @@ records are skipped one by one instead of crashing.
 import io
 import os
 import pickle
-
 from pathlib import Path
 
 from personal_assistant.models import Contact, ContactBook, Note, NoteBook
@@ -98,6 +97,8 @@ class Storage:
             warnings.append(f"Data file {self.path} is corrupted and was ignored.")
             return empty
         if not isinstance(payload, dict):
-            warnings.append(f"Data file {self.path} has unexpected content and was ignored.")
+            warnings.append(
+                f"Data file {self.path} has unexpected content and was ignored."
+            )
             return empty
         return payload

@@ -72,7 +72,9 @@ def test_can_remove_the_last_phone(contact):
     assert contact.get_phones() == "No phones for current contact"
 
 
-@pytest.mark.parametrize("method", ["remove_email", "remove_birthday", "remove_address"])
+@pytest.mark.parametrize(
+    "method", ["remove_email", "remove_birthday", "remove_address"]
+)
 def test_removing_an_unset_field_is_an_error(contact, method):
     with pytest.raises(ValidationError):
         getattr(contact, method)()
