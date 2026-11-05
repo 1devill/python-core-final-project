@@ -5,7 +5,8 @@ from datetime import date
 from typing import NamedTuple
 
 from personal_assistant.exceptions import ContactDoesNotExist, ValidationError
-from personal_assistant.models.contact import Contact
+
+from .contact import Contact
 
 
 class UpcomingBirthday(NamedTuple):

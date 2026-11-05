@@ -117,7 +117,7 @@ python-core-final-project/
         │   └── note_book.py       # NoteBook: add, find, delete, search/sort by tags
         │
         ├── storage/
-        │   └── storage.py         # save/load data in ~/.personal_assistant/
+        │   └── storage.py         # Storage class: save/load data in ~/.personal_assistant/
         │
         └── cli/                   # everything related to user interaction
             ├── parser.py          # splits user input into command + arguments, parses search filters

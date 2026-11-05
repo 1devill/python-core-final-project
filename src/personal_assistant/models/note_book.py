@@ -3,7 +3,8 @@
 from collections import UserDict
 
 from personal_assistant.exceptions import NoteDoesNotExist, ValidationError
-from personal_assistant.models.note import Note
+
+from .note import Note
 
 
 class NoteBook(UserDict):

@@ -2,15 +2,19 @@
 
 from collections.abc import Callable
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TypeVar
 
-if TYPE_CHECKING:
-    from personal_assistant.models.contact_book import ContactBook
-    from personal_assistant.models.note_book import NoteBook
+BookT = TypeVar("BookT")
 
-Handler = Callable[[list[str], "ContactBook | NoteBook"], str]
-"""A command handler: takes the arguments after the command and the book,
-returns a message to show the user."""
+Handler = Callable[[list[str], BookT], str]
+"""Template for every command handler: takes the arguments after the command
+and a book, returns a message to show the user. Name the book it works with:
+
+    Handler[ContactBook]
+    Handler[NoteBook]
+    Handler[ContactBook | NoteBook]  - works with either book
+    Handler[Any]                     - the book depends on the command
+"""
 
 
 class Command(Enum):
@@ -19,6 +23,11 @@ class Command(Enum):
     Command("add") -> Command.ADD
     Command("close") -> Command.EXIT (via aliases)
     """
+
+    keyword: str
+    usage: str
+    description: str
+    aliases: tuple[str, ...]
 
     HELLO = ("hello", "hello", "Greet the assistant")
     ADD = (
@@ -155,6 +164,7 @@ class Command(Enum):
     ):
         obj = object.__new__(cls)
         obj._value_ = keyword
+        obj.keyword = keyword
         obj.usage = usage
         obj.description = description
         obj.aliases = aliases
@@ -162,13 +172,15 @@ class Command(Enum):
 
     @classmethod
     def _missing_(cls, value):
-        # Called only when Command(value) finds no exact match.
-        # Handles any letter case ("ADD", "Add") and aliases ("Close").
+        """
+        Called only when Command(value) finds no exact match.
+        Handles any letter case ("ADD", "Add") and aliases ("Close").
+        """
         if not isinstance(value, str):
             return None
         normalized = value.strip().lower()
         for command in cls:
-            if normalized == command.value or normalized in command.aliases:
+            if normalized == command.keyword or normalized in command.aliases:
                 return command
         return None
 
@@ -183,4 +195,4 @@ class Command(Enum):
     @classmethod
     def keywords(cls) -> list[str]:
         """Return every keyword and alias the user can type."""
-        return [name for command in cls for name in (command.value, *command.aliases)]
+        return [name for command in cls for name in (command.keyword, *command.aliases)]

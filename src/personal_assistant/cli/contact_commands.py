@@ -1,11 +1,12 @@
 """Contact command handlers and the CONTACT_COMMANDS dict."""
 
-from personal_assistant.cli import ui
-from personal_assistant.cli.command import Command, Handler
-from personal_assistant.cli.decorators import handle_cmd_error
-from personal_assistant.cli.parser import parse_filters
-from personal_assistant.models.contact import Contact
-from personal_assistant.models.contact_book import ContactBook
+from personal_assistant.models import Contact, ContactBook
+
+from . import ui
+
+from .decorators import handle_cmd_error
+from .command import Command, Handler
+from .parser import parse_filters
 
 SEARCH_KEYS = ("name", "phone", "email", "address")
 
@@ -169,7 +170,7 @@ def find_contacts(args: list[str], book: ContactBook) -> str:
     return ui.contact_list(found, title="Found contacts")
 
 
-CONTACT_COMMANDS: dict[Command, Handler] = {
+CONTACT_COMMANDS: dict[Command, Handler[ContactBook]] = {
     Command.ADD: add_contact,
     Command.CHANGE_PHONE: update_contact_phone,
     Command.SHOW_PHONE: get_phones,

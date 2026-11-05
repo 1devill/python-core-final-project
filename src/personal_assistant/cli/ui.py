@@ -5,11 +5,10 @@ from datetime import date
 
 from colorama import Fore, Style
 
-from personal_assistant.cli.command import Command
 from personal_assistant.constants import DATE_PARSE_FORMAT
-from personal_assistant.models.contact import Contact
-from personal_assistant.models.contact_book import UpcomingBirthday
-from personal_assistant.models.note import Note
+from personal_assistant.models import Contact, Note, UpcomingBirthday
+
+from .command import Command
 
 WIDTH = 52
 

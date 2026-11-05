@@ -1,7 +1,8 @@
 """Note: a named text with one or more tags."""
 
 from personal_assistant.exceptions import ValidationError
-from personal_assistant.models.fields import Name, Tag, Text
+
+from .fields import Name, Tag, Text
 
 
 class Note:
@@ -25,6 +26,18 @@ class Note:
             f"\tTags: {', '.join(tag.value for tag in self.tags)}\n"
             f"\tText: {self.text}"
         )
+
+    def __getstate__(self) -> dict:
+        """Plain built-in data used by pickle to save the note."""
+        return {
+            "name": self.name.value,
+            "tags": [tag.value for tag in self.tags],
+            "text": self.text.value,
+        }
+
+    def __setstate__(self, state: dict) -> None:
+        """Rebuild the note through the field constructors; raises on invalid data."""
+        self.__init__(state["name"], state["tags"], state["text"])
 
     @property
     def tags(self) -> list[Tag]:

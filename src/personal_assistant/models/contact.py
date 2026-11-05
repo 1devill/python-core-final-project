@@ -1,7 +1,8 @@
 """Contact: one person in the book, composed of fields."""
 
 from personal_assistant.exceptions import ValidationError
-from personal_assistant.models.fields import Address, Birthday, Email, Name, Phone
+
+from .fields import Address, Birthday, Email, Name, Phone
 
 
 class Contact:
@@ -22,6 +23,28 @@ class Contact:
         if self.address:
             result += f", address: {self.address}"
         return result
+
+    def __getstate__(self) -> dict:
+        """Plain built-in data used by pickle to save the contact."""
+        return {
+            "name": self.name.value,
+            "phones": [phone.value for phone in self.phones],
+            "birthday": self.birthday.value if self.birthday else None,
+            "email": self.email.value if self.email else None,
+            "address": self.address.value if self.address else None,
+        }
+
+    def __setstate__(self, state: dict) -> None:
+        """Rebuild the contact through the field constructors; raises on invalid data."""
+        self.__init__(state["name"])
+        for phone in state.get("phones") or []:
+            self.add_phone(phone)
+        if state.get("birthday") is not None:
+            self.add_birthday(state["birthday"])
+        if state.get("email") is not None:
+            self.add_email(state["email"])
+        if state.get("address") is not None:
+            self.add_address(state["address"])
 
     def add_phone(self, phone_num: str) -> None:
         phone = Phone(phone_num)

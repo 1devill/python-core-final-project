@@ -1,13 +1,25 @@
 """Note command handlers and the NOTE_COMMANDS dict."""
 
-from personal_assistant.cli import ui
-from personal_assistant.cli.command import Command, Handler
-from personal_assistant.cli.decorators import handle_cmd_error
-from personal_assistant.cli.parser import parse_filters
-from personal_assistant.models.note import Note
-from personal_assistant.models.note_book import NoteBook
+from personal_assistant.models import Note, NoteBook
+
+from . import ui
+
+from .decorators import handle_cmd_error
+from .command import Command, Handler
+from .parser import parse_filters
 
 SEARCH_KEYS = ("name", "tag", "text")
+
+
+def strip_brackets(tags: str) -> str:
+    """
+    remove the brackets around tags typed from the usage hint: "[a,b]" -> "a,b".
+    Done here and not in Tag: Tag also runs when notes are loaded from the file,
+    where a note saved with such tags would turn invalid and be dropped
+    :param tags: tag or comma-separated tags as typed: str
+    :return: tags without the surrounding brackets: str
+    """
+    return tags.strip("[]")
 
 
 @handle_cmd_error(Command.ADD_NOTE)
@@ -21,7 +33,7 @@ def add_note(args: list[str], book: NoteBook) -> str:
         are handled by handle_cmd_error
     """
     name, tags, *text_parts = args
-    note = Note(name, tags.split(","), " ".join(text_parts))
+    note = Note(name, strip_brackets(tags).split(","), " ".join(text_parts))
     book.add_note(note)
     tags = ", ".join(f"#{tag}" for tag in note.tags)
     return ui.success(f"Note '{ui.highlight(note.name)}' added with tags {tags}.")
@@ -51,6 +63,7 @@ def add_note_tag(args: list[str], book: NoteBook) -> str:
         and wrong args (ValueError) are handled by handle_cmd_error
     """
     name, tag = args
+    tag = strip_brackets(tag)
     note = book.get_note(name)
     note.edit_tag(tag)
     return ui.success(f"Tag '{tag.lower()}' added to '{ui.highlight(note.name)}'.")
@@ -67,6 +80,7 @@ def change_note_tag(args: list[str], book: NoteBook) -> str:
         and wrong args (ValueError) are handled by handle_cmd_error
     """
     name, old_tag, new_tag = args
+    new_tag = strip_brackets(new_tag)
     note = book.get_note(name)
     note.edit_tag(new_tag, old_tag)
     return ui.success(
@@ -106,7 +120,7 @@ def change_note_text(args: list[str], book: NoteBook) -> str:
 
 def show_all_notes(args: list[str], book: NoteBook) -> str:
     """
-    command `all-notes`: show all notes of the note book
+    command `all-notes`: show all notes of the book
     :param args: command args (not used)
     :param book: NoteBook
     :return: note cards, or a message if there are none
@@ -141,7 +155,7 @@ def find_notes(args: list[str], book: NoteBook) -> str:
     return ui.note_list(found, title="Found notes")
 
 
-NOTE_COMMANDS: dict[Command, Handler] = {
+NOTE_COMMANDS: dict[Command, Handler[NoteBook]] = {
     Command.ADD_NOTE: add_note,
     Command.REMOVE_NOTE: remove_note,
     Command.ADD_NOTE_TAG: add_note_tag,
