@@ -63,8 +63,8 @@ class Storage:
         payload = self._read_payload(warnings)
 
         for kind, cls, items, add in (
-                ("contact", Contact, payload.get("contacts"), book.add_contact),
-                ("note", Note, payload.get("notes"), notes.add_note),
+                    ("contact", Contact, payload.get("contacts"), book.add_contact),
+                    ("note", Note, payload.get("notes"), notes.add_note),
         ):
             if not isinstance(items, list):
                 items = []
