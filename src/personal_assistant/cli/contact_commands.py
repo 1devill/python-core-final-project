@@ -4,7 +4,6 @@ from personal_assistant.cli import ui
 from personal_assistant.cli.command import Command, Handler
 from personal_assistant.cli.decorators import handle_cmd_error
 from personal_assistant.cli.parser import parse_filters
-from personal_assistant.exceptions import ValidationError
 from personal_assistant.models.contact import Contact
 from personal_assistant.models.contact_book import ContactBook
 
@@ -159,8 +158,6 @@ def remove_address(args: list[str], book: ContactBook) -> str:
 def get_upcoming_birthdays(args: list[str], book: ContactBook) -> str:
     (days,) = args
     days_interval = int(days)
-    if days_interval < 0:
-        raise ValidationError("Days must be 0 or more")
     return ui.birthday_list(book.find_upcoming_birthdays(days_interval))
 
 

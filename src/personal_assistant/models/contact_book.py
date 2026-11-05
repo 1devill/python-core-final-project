@@ -42,6 +42,9 @@ class ContactBook(UserDict[str, Contact]):
         today = date.today()
         upcoming_birthdays: list[UpcomingBirthday] = []
 
+        if days_interval < 0:
+            raise ValidationError("Days must be 0 or more")
+
         for contact in self.data.values():
             if contact.birthday is None:
                 continue
