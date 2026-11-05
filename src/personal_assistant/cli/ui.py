@@ -1,9 +1,12 @@
 """Terminal output helpers: colors, banner, help table and messages."""
 
 from collections.abc import Iterable
+from datetime import date
+
 from colorama import Fore, Style
 
-from personal_assistant.models import Contact, Note
+from personal_assistant.constants import DATE_PARSE_FORMAT
+from personal_assistant.models import Contact, Note, UpcomingBirthday
 
 from .command import Command
 
@@ -73,28 +76,32 @@ def field(label: str, value: object) -> str:
     return f"{Fore.CYAN}{label}:{Style.RESET_ALL} {value}"
 
 
-def contact_card(contact: Contact) -> str:
+def contact_card(contact: Contact, next_birthday: date | None = None) -> str:
     """Format one contact as a multi-line card."""
     phones = ", ".join(str(phone) for phone in contact.phones)
     lines = [
         f"{Fore.CYAN}{Style.BRIGHT}● {contact.name}{Style.RESET_ALL}",
         "  " + field("Phones", phones or f"{Style.DIM}-{Style.RESET_ALL}"),
     ]
+    next_birthday_date = (
+        next_birthday.strftime(DATE_PARSE_FORMAT) if next_birthday else None
+    )
     optional = (
         ("Birthday", contact.birthday),
         ("Email", contact.email),
         ("Address", contact.address),
+        ("Next birthday", next_birthday_date),
     )
     lines += ["  " + field(label, value) for label, value in optional if value]
     return "\n".join(lines)
 
 
-def contact_list(contacts: Iterable[Contact]) -> str:
-    """Format all contacts as cards under a header with the total count."""
+def contact_list(contacts: Iterable[Contact], title: str = "Contacts") -> str:
+    """Format contacts as cards under a header with the total count."""
     cards = [contact_card(contact) for contact in contacts]
     if not cards:
         return info("No contacts yet.")
-    header = f"{Style.BRIGHT}Contacts ({len(cards)}):{Style.RESET_ALL}"
+    header = f"{Style.BRIGHT}{title} ({len(cards)}):{Style.RESET_ALL}"
     return header + "\n" + "\n\n".join(cards)
 
 
@@ -134,3 +141,15 @@ def greeting() -> str:
 def goodbye() -> str:
     """Return the farewell message."""
     return f"{Fore.MAGENTA}{Style.BRIGHT}👋 Goodbye! See you next time."
+
+
+def birthday_list(upcoming_birthdays: Iterable[UpcomingBirthday]) -> str:
+    """Format all upcoming birthdays list as cards under a header with the total count."""
+    cards = [
+        contact_card(birthday.contact, birthday.next_birthday)
+        for birthday in upcoming_birthdays
+    ]
+    if not cards:
+        return info("No upcoming birthdays found.")
+    header = f"{Style.BRIGHT}Upcoming birthdays ({len(cards)}):{Style.RESET_ALL}"
+    return header + "\n" + "\n\n".join(cards)

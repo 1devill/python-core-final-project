@@ -13,7 +13,7 @@ Team project for the Neoversity course _Python Programming: Foundations and Best
 - Validate phone numbers and emails on create/edit
 - Search contacts (by name and other fields)
 - Edit and delete contacts
-- Show contacts with a birthday in the next N days
+- Show contacts with a birthday within the next N days
 
 ### Notes
 
@@ -64,10 +64,12 @@ The assistant runs in an interactive loop: type a command, press Enter, and it r
 | `change-phone [name] [old phone] [new phone]`                | Change a contact's phone                        |
 | `phone [name]`                                               | Show a contact's phones                         |
 | `all`                                                        | Show all contacts                               |
+| `find-contacts [name=..] [phone=..] [email=..] [address=..]` | Find contacts matching all given filters        |
 | `add-birthday [name] [DD.MM.YYYY]`                           | Add a birthday to a contact                     |
 | `add-email [name] [email]`                                   | Add an email to a contact                       |
 | `add-address [name] [address]`                               | Add an address to a contact                     |
 | `show-birthday` / `show-email` / `show-address [name]`       | Show a contact's birthday / email / address     |
+| `show-upcoming-birthdays [days]`                             | Show birthdays within the next N days           |
 | `remove [name]`                                              | Remove a contact                                |
 | `remove-phone [name] [phone]`                                | Remove a contact's phone                        |
 | `remove-birthday` / `remove-email` / `remove-address [name]` | Remove a contact's birthday / email / address   |
@@ -82,6 +84,9 @@ The assistant runs in an interactive loop: type a command, press Enter, and it r
 | `remove-note [name]`                                         | Remove a note                                   |
 | `help`                                                       | Show all commands                               |
 | `exit` / `close` / `bye` / `quit`                            | Save data and exit                              |
+
+`find-contacts` matches part of a value, in any case, and a phone matches if any of the contact's phones contains it:
+`find-contacts name=an address=Kyiv Main St` shows contacts matching both filters.
 
 `find-notes` takes `key=value` filters, which become keyword arguments of `NoteBook.find`:
 `find-notes text=buy milk tag=home` → `book.find(text="buy milk", tag="home")`.
@@ -115,7 +120,7 @@ python-core-final-project/
         │   └── storage.py         # Storage class: save/load data in ~/.personal_assistant/
         │
         └── cli/                   # everything related to user interaction
-            ├── parser.py          # splits user input into command + arguments
+            ├── parser.py          # splits user input into command + arguments, parses search filters
             ├── command.py         # Command enum: keyword, usage, description, aliases
             ├── ui.py              # colors, banner, help table, message formatting
             ├── decorators.py      # handle_cmd_error: turns exceptions into user messages
@@ -155,5 +160,5 @@ You don't need to change `main.py` to add a command.
 ## Team
 
 - Daniil Derbas
-- Leonid
+- Leonid Tsarov
 - Andrii Koptiev

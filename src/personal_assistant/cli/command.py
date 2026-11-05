@@ -125,11 +125,21 @@ class Command(Enum):
         "find-notes [name=..] [tag=..] [text=..]",
         "Find notes matching all given filters",
     )
+    FIND_CONTACTS = (
+        "find-contacts",
+        "find-contacts [name=..] [phone=..] [email=..] [address=..]",
+        "Find contacts matching all given filters",
+    )
     SHOW_PHONE = ("phone", "phone [name]", "Show a contact's phones")
     SHOW_BIRTHDAY = (
         "show-birthday",
         "show-birthday [name]",
         "Show a contact's birthday",
+    )
+    SHOW_UPCOMING_BIRTHDAYS = (
+        "show-upcoming-birthdays",
+        "show-upcoming-birthdays [days]",
+        "Show upcoming birthdays in next given days",
     )
     SHOW_EMAIL = (
         "show-email",

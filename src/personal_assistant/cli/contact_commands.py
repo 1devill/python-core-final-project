@@ -2,10 +2,13 @@
 
 from personal_assistant.models import Contact, ContactBook
 
-import ui
+from . import ui
 
 from .decorators import handle_cmd_error
 from .command import Command, Handler
+from .parser import parse_filters
+
+SEARCH_KEYS = ("name", "phone", "email", "address")
 
 
 def normalize_name(name: str) -> str:
@@ -152,6 +155,21 @@ def remove_address(args: list[str], book: ContactBook) -> str:
     return ui.success(f"{ui.highlight(name)}'s address was removed.")
 
 
+@handle_cmd_error(Command.SHOW_UPCOMING_BIRTHDAYS)
+def get_upcoming_birthdays(args: list[str], book: ContactBook) -> str:
+    (days,) = args
+    days_interval = int(days)
+    return ui.birthday_list(book.find_upcoming_birthdays(days_interval))
+
+
+@handle_cmd_error(Command.FIND_CONTACTS)
+def find_contacts(args: list[str], book: ContactBook) -> str:
+    found = book.search_contacts(**parse_filters(args, SEARCH_KEYS))
+    if not found:
+        return ui.info("No contacts found.")
+    return ui.contact_list(found, title="Found contacts")
+
+
 CONTACT_COMMANDS: dict[Command, Handler[ContactBook]] = {
     Command.ADD: add_contact,
     Command.CHANGE_PHONE: update_contact_phone,
@@ -168,4 +186,6 @@ CONTACT_COMMANDS: dict[Command, Handler[ContactBook]] = {
     Command.REMOVE_BIRTHDAY: remove_birthday,
     Command.REMOVE_EMAIL: remove_email,
     Command.REMOVE_PHONE: remove_phone,
+    Command.SHOW_UPCOMING_BIRTHDAYS: get_upcoming_birthdays,
+    Command.FIND_CONTACTS: find_contacts,
 }

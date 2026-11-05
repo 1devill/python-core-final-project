@@ -2,7 +2,7 @@
 
 from personal_assistant.models import ContactBook, NoteBook
 
-import ui
+from . import ui
 
 from .command import Command, Handler
 
