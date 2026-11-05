@@ -2,7 +2,8 @@
 
 from personal_assistant.models import Contact, ContactBook
 
-from .ui import success, highlight, info, field, contact_list
+import ui
+
 from .decorators import handle_cmd_error
 from .command import Command, Handler
 
@@ -19,9 +20,9 @@ def add_contact(args: list[str], book: ContactBook) -> str:
         contact = Contact(name)
         contact.add_phone(phone)
         book.add_contact(contact)
-        return success(f"Contact '{highlight(name)}' added.")
+        return ui.success(f"Contact '{ui.highlight(name)}' added.")
     book.find(name).add_phone(phone)
-    return success(f"Phone added to '{highlight(name)}'.")
+    return ui.success(f"Phone added to '{ui.highlight(name)}'.")
 
 
 @handle_cmd_error(Command.CHANGE_PHONE)
@@ -30,7 +31,7 @@ def update_contact_phone(args: list[str], book: ContactBook) -> str:
     name = normalize_name(name)
     contact = book.find(name)
     contact.edit_phone(old_phone, new_phone)
-    return success(f"Phone changed for '{highlight(name)}'.")
+    return ui.success(f"Phone changed for '{ui.highlight(name)}'.")
 
 
 @handle_cmd_error(Command.REMOVE_CONTACT)
@@ -38,7 +39,7 @@ def remove_contact(args: list[str], book: ContactBook) -> str:
     (name,) = args
     name = normalize_name(name)
     book.delete(name)
-    return success(f"Contact '{highlight(name)}' removed.")
+    return ui.success(f"Contact '{ui.highlight(name)}' removed.")
 
 
 @handle_cmd_error(Command.REMOVE_PHONE)
@@ -47,7 +48,7 @@ def remove_phone(args: list[str], book: ContactBook) -> str:
     name = normalize_name(name)
     contact = book.find(name)
     contact.remove_phone(phone)
-    return success(f"Phone removed from '{highlight(name)}'.")
+    return ui.success(f"Phone removed from '{ui.highlight(name)}'.")
 
 
 @handle_cmd_error(Command.SHOW_PHONE)
@@ -56,12 +57,12 @@ def get_phones(args: list[str], book: ContactBook) -> str:
     name = normalize_name(name)
     contact = book.find(name)
     if not contact.phones:
-        return info(f"Contact '{name}' has no phones.")
-    return field("Phones", ", ".join(str(phone) for phone in contact.phones))
+        return ui.info(f"Contact '{name}' has no phones.")
+    return ui.field("Phones", ", ".join(str(phone) for phone in contact.phones))
 
 
 def show_all(args: list[str], book: ContactBook) -> str:
-    return contact_list(book.values())
+    return ui.contact_list(book.values())
 
 
 @handle_cmd_error(Command.ADD_BIRTHDAY)
@@ -70,7 +71,7 @@ def add_birthday(args: list[str], book: ContactBook) -> str:
     name = normalize_name(name)
     contact = book.find(name)
     contact.add_birthday(birth_date)
-    return success(f"Birthday added for '{highlight(name)}'.")
+    return ui.success(f"Birthday added for '{ui.highlight(name)}'.")
 
 
 @handle_cmd_error(Command.ADD_EMAIL)
@@ -79,7 +80,7 @@ def add_email(args: list[str], book: ContactBook) -> str:
     name = normalize_name(name)
     contact = book.find(name)
     contact.add_email(email)
-    return success(f"Email added for '{highlight(name)}'.")
+    return ui.success(f"Email added for '{ui.highlight(name)}'.")
 
 
 @handle_cmd_error(Command.ADD_ADDRESS)
@@ -91,7 +92,7 @@ def add_address(args: list[str], book: ContactBook) -> str:
     name = normalize_name(name)
     contact = book.find(name)
     contact.add_address(address)
-    return success(f"Address added for '{highlight(name)}'.")
+    return ui.success(f"Address added for '{ui.highlight(name)}'.")
 
 
 @handle_cmd_error(Command.SHOW_BIRTHDAY)
@@ -100,8 +101,8 @@ def show_birthday(args: list[str], book: ContactBook) -> str:
     name = normalize_name(name)
     contact = book.find(name)
     if contact.birthday is None:
-        return info(f"Contact '{name}' has no birthday set.")
-    return field(f"{name}'s birthday", contact.birthday)
+        return ui.info(f"Contact '{name}' has no birthday set.")
+    return ui.field(f"{name}'s birthday", contact.birthday)
 
 
 @handle_cmd_error(Command.SHOW_EMAIL)
@@ -110,8 +111,8 @@ def show_email(args: list[str], book: ContactBook) -> str:
     name = normalize_name(name)
     contact = book.find(name)
     if contact.email is None:
-        return info(f"Contact '{name}' has no email set.")
-    return field(f"{name}'s email", contact.email)
+        return ui.info(f"Contact '{name}' has no email set.")
+    return ui.field(f"{name}'s email", contact.email)
 
 
 @handle_cmd_error(Command.SHOW_ADDRESS)
@@ -120,8 +121,8 @@ def show_address(args: list[str], book: ContactBook) -> str:
     name = normalize_name(name)
     contact = book.find(name)
     if contact.address is None:
-        return info(f"Contact '{name}' has no address set.")
-    return field(f"{name}'s address", contact.address)
+        return ui.info(f"Contact '{name}' has no address set.")
+    return ui.field(f"{name}'s address", contact.address)
 
 
 @handle_cmd_error(Command.REMOVE_EMAIL)
@@ -130,7 +131,7 @@ def remove_email(args: list[str], book: ContactBook) -> str:
     name = normalize_name(name)
     contact = book.find(name)
     contact.remove_email()
-    return success(f"{highlight(name)}'s email was removed.")
+    return ui.success(f"{ui.highlight(name)}'s email was removed.")
 
 
 @handle_cmd_error(Command.REMOVE_BIRTHDAY)
@@ -139,7 +140,7 @@ def remove_birthday(args: list[str], book: ContactBook) -> str:
     name = normalize_name(name)
     contact = book.find(name)
     contact.remove_birthday()
-    return success(f"{highlight(name)}'s birthday was removed.")
+    return ui.success(f"{ui.highlight(name)}'s birthday was removed.")
 
 
 @handle_cmd_error(Command.REMOVE_ADDRESS)
@@ -148,7 +149,7 @@ def remove_address(args: list[str], book: ContactBook) -> str:
     name = normalize_name(name)
     contact = book.find(name)
     contact.remove_address()
-    return success(f"{highlight(name)}'s address was removed.")
+    return ui.success(f"{ui.highlight(name)}'s address was removed.")
 
 
 CONTACT_COMMANDS: dict[Command, Handler[ContactBook]] = {
