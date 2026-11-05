@@ -10,12 +10,10 @@ records are skipped one by one instead of crashing.
 import io
 import os
 import pickle
+
 from pathlib import Path
 
-from personal_assistant.models.contact import Contact
-from personal_assistant.models.contact_book import ContactBook
-from personal_assistant.models.note import Note
-from personal_assistant.models.note_book import NoteBook
+from personal_assistant.models import Contact, ContactBook, Note, NoteBook
 
 DATA_DIR = Path.home() / ".personal_assistant"
 DATA_FILE = DATA_DIR / "data.pkl"
@@ -65,8 +63,8 @@ class Storage:
         payload = self._read_payload(warnings)
 
         for kind, cls, items, add in (
-            ("contact", Contact, payload.get("contacts"), book.add_contact),
-            ("note", Note, payload.get("notes"), notes.add_note),
+                ("contact", Contact, payload.get("contacts"), book.add_contact),
+                ("note", Note, payload.get("notes"), notes.add_note),
         ):
             if not isinstance(items, list):
                 items = []

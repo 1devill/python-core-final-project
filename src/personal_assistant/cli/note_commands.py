@@ -1,11 +1,11 @@
 """Note command handlers and the NOTE_COMMANDS dict."""
 
-from personal_assistant.cli import ui
-from personal_assistant.cli.command import Command, Handler
-from personal_assistant.cli.decorators import handle_cmd_error
 from personal_assistant.exceptions import ValidationError
-from personal_assistant.models.note import Note
-from personal_assistant.models.note_book import NoteBook
+from personal_assistant.models import Note, NoteBook
+
+from .ui import success, highlight, info, note_list
+from .decorators import handle_cmd_error
+from .command import Command, Handler
 
 SEARCH_KEYS = ("name", "tag", "text")
 
@@ -53,7 +53,7 @@ def add_note(args: list[str], book: NoteBook) -> str:
     note = Note(name, tags.split(","), " ".join(text_parts))
     book.add_note(note)
     tags = ", ".join(f"#{tag}" for tag in note.tags)
-    return ui.success(f"Note '{ui.highlight(note.name)}' added with tags {tags}.")
+    return success(f"Note '{highlight(note.name)}' added with tags {tags}.")
 
 
 @handle_cmd_error(Command.REMOVE_NOTE)
@@ -67,7 +67,7 @@ def remove_note(args: list[str], book: NoteBook) -> str:
     (name,) = args
     note = book.get_note(name)
     book.delete_note(name)
-    return ui.success(f"Note '{ui.highlight(note.name)}' removed.")
+    return success(f"Note '{highlight(note.name)}' removed.")
 
 
 @handle_cmd_error(Command.ADD_NOTE_TAG)
@@ -82,7 +82,7 @@ def add_note_tag(args: list[str], book: NoteBook) -> str:
     name, tag = args
     note = book.get_note(name)
     note.edit_tag(tag)
-    return ui.success(f"Tag '{tag.lower()}' added to '{ui.highlight(note.name)}'.")
+    return success(f"Tag '{tag.lower()}' added to '{highlight(note.name)}'.")
 
 
 @handle_cmd_error(Command.CHANGE_NOTE_TAG)
@@ -98,8 +98,8 @@ def change_note_tag(args: list[str], book: NoteBook) -> str:
     name, old_tag, new_tag = args
     note = book.get_note(name)
     note.edit_tag(new_tag, old_tag)
-    return ui.success(
-        f"Tag '{old_tag.lower()}' replaced with '{new_tag.lower()}' in '{ui.highlight(note.name)}'."
+    return success(
+        f"Tag '{old_tag.lower()}' replaced with '{new_tag.lower()}' in '{highlight(note.name)}'."
     )
 
 
@@ -115,7 +115,7 @@ def remove_note_tag(args: list[str], book: NoteBook) -> str:
     name, tag = args
     note = book.get_note(name)
     note.remove_tag(tag)
-    return ui.success(f"Tag '{tag.lower()}' removed from '{ui.highlight(note.name)}'.")
+    return success(f"Tag '{tag.lower()}' removed from '{highlight(note.name)}'.")
 
 
 @handle_cmd_error(Command.CHANGE_NOTE_TEXT)
@@ -130,17 +130,17 @@ def change_note_text(args: list[str], book: NoteBook) -> str:
     name, *text_parts = args
     note = book.get_note(name)
     note.edit_text(" ".join(text_parts))
-    return ui.success(f"Text changed for '{ui.highlight(note.name)}'.")
+    return success(f"Text changed for '{highlight(note.name)}'.")
 
 
 def show_all_notes(args: list[str], book: NoteBook) -> str:
     """
-    command `all-notes`: show all notes of the note book
+    command `all-notes`: show all notes of the book
     :param args: command args (not used)
     :param book: NoteBook
     :return: note cards, or a message if there are none
     """
-    return ui.note_list(book.values())
+    return note_list(book.values())
 
 
 @handle_cmd_error(Command.SORT_NOTES)
@@ -152,7 +152,7 @@ def sort_notes(args: list[str], book: NoteBook) -> str:
     :return: note cards; wrong args (ValueError) are handled by handle_cmd_error
     """
     (tag,) = args
-    return ui.note_list(book.sort_by_tag(tag))
+    return note_list(book.sort_by_tag(tag))
 
 
 @handle_cmd_error(Command.FIND_NOTES)
@@ -166,11 +166,11 @@ def find_notes(args: list[str], book: NoteBook) -> str:
     """
     found = book.find(**parse_filters(args))
     if not found:
-        return ui.info("No notes found.")
-    return ui.note_list(found, title="Found notes")
+        return info("No notes found.")
+    return note_list(found, title="Found notes")
 
 
-NOTE_COMMANDS: dict[Command, Handler] = {
+NOTE_COMMANDS: dict[Command, Handler[NoteBook]] = {
     Command.ADD_NOTE: add_note,
     Command.REMOVE_NOTE: remove_note,
     Command.ADD_NOTE_TAG: add_note_tag,

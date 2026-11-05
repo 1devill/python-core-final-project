@@ -1,12 +1,11 @@
 """Terminal output helpers: colors, banner, help table and messages."""
 
 from collections.abc import Iterable
-
 from colorama import Fore, Style
 
-from personal_assistant.cli.command import Command
-from personal_assistant.models.contact import Contact
-from personal_assistant.models.note import Note
+from personal_assistant.models import Contact, Note
+
+from .command import Command
 
 WIDTH = 52
 

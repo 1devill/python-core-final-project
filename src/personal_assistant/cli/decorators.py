@@ -2,9 +2,10 @@
 
 from functools import wraps
 
-from personal_assistant.cli import ui
-from personal_assistant.cli.command import Command
 from personal_assistant.exceptions import AssistantError
+
+from .ui import error as err
+from .command import Command
 
 
 def handle_cmd_error(command: Command):
@@ -16,9 +17,9 @@ def handle_cmd_error(command: Command):
             try:
                 return func(*args, **kwargs)
             except AssistantError as error:
-                return ui.error(str(error))
+                return err(str(error))
             except ValueError:
-                return ui.error(f"Usage: {command.usage}")
+                return err(f"Usage: {command.usage}")
 
         return inner
 

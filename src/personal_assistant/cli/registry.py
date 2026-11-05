@@ -1,11 +1,13 @@
 """Registry that merges command dicts from all command modules."""
 
-from personal_assistant.cli.command import Command, Handler
-from personal_assistant.cli.contact_commands import CONTACT_COMMANDS
-from personal_assistant.cli.general_commands import GENERAL_COMMANDS
-from personal_assistant.cli.note_commands import NOTE_COMMANDS
+from typing import Any
 
-COMMANDS: dict[Command, Handler] = {
+from .contact_commands import CONTACT_COMMANDS
+from .general_commands import GENERAL_COMMANDS
+from .note_commands import NOTE_COMMANDS
+from .command import Command, Handler
+
+COMMANDS: dict[Command, Handler[Any]] = {
     **GENERAL_COMMANDS,
     **CONTACT_COMMANDS,
     **NOTE_COMMANDS,
