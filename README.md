@@ -155,7 +155,66 @@ You don't need to change `main.py` to add a command.
 
 1. Create a branch from `main`: `git switch -c feature/<short-name>`
 2. Follow PEP 8 and add docstrings to classes and public methods
-3. Open a pull request into `main` and request a review from a teammate
+3. Run the [checks](#checks-before-a-pull-request) and fix what they report
+4. Open a pull request into `main` and request a review from a teammate
+
+### Development setup
+
+Install the project with the development tools, inside the virtual environment:
+
+```bash
+pip install -e ".[dev]"
+```
+
+To work on the AI parser too, use `pip install -e ".[dev,ai]"`. Run the same command again
+after `pyproject.toml` changes.
+
+| Tool                                           | Purpose                                  |
+| ---------------------------------------------- | ---------------------------------------- |
+| [Black](https://black.readthedocs.io)          | Code formatting                          |
+| [Ruff](https://docs.astral.sh/ruff/)           | Linting and import sorting               |
+| [mypy](https://mypy.readthedocs.io)            | Type checking                            |
+| [pytest](https://docs.pytest.org)              | Tests                                    |
+
+All tools are configured in `pyproject.toml`. Black is the only formatter: do not use `ruff format`.
+
+### Checks before a pull request
+
+```bash
+black .              # format the code
+ruff check --fix .   # lint and sort imports
+mypy src tests       # check types
+pytest               # run the tests
+```
+
+Tests marked `xfail` are known bugs. When you fix one, its test fails with `XPASS(strict)`:
+remove its `@pytest.mark.xfail` line.
+
+To see test coverage:
+
+```bash
+pytest --cov=personal_assistant --cov-report=term-missing
+```
+
+### VS Code
+
+Install the extensions [Black Formatter](https://marketplace.visualstudio.com/items?itemName=ms-python.black-formatter),
+[Ruff](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff) and
+[Mypy Type Checker](https://marketplace.visualstudio.com/items?itemName=ms-python.mypy-type-checker).
+Select the `.venv` interpreter with **Python: Select Interpreter**, then add this to your settings
+to format and sort imports on save:
+
+```json
+{
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports.ruff": "explicit"
+    }
+  }
+}
+```
 
 ## Team
 
