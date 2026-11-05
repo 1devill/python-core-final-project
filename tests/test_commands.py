@@ -3,7 +3,7 @@
 import pytest
 
 from conftest import plain
-from personal_assistant.cli import COMMANDS, Command, ai_parser
+from personal_assistant.cli import COMMANDS, Command
 from personal_assistant.main import unknown_command
 
 LOOP_COMMANDS = {Command.HELP, Command.EXIT}
@@ -239,44 +239,3 @@ class TestNoteCommands:
     def test_empty_notebook_messages(self, run):
         assert "No notes yet." in run("all-notes")
         assert "No notes yet." in run("sort-notes home")
-
-
-class FakeBlock:
-    type = "tool_use"
-    name = ai_parser.TOOL_NAME
-
-    def __init__(self, tool_input):
-        self.input = tool_input
-
-
-class FakeResponse:
-    def __init__(self, *content, stop_reason="tool_use"):
-        self.content = content
-        self.stop_reason = stop_reason
-
-
-class TestAiParserExtract:
-    """Only the local answer parsing: no request is sent."""
-
-    def test_valid_command(self):
-        response = FakeResponse(FakeBlock({"command": "add", "args": ["anna", 123]}))
-        assert ai_parser._extract(response) == (Command.ADD, ["anna", "123"])
-
-    @pytest.mark.parametrize(
-        "tool_input",
-        [{"command": "exit"}, {"command": "help"}, {"command": "nope"}, {}],
-        ids=["exit", "help", "unknown", "empty"],
-    )
-    def test_commands_the_model_may_not_choose(self, tool_input):
-        assert ai_parser._extract(FakeResponse(FakeBlock(tool_input))) is None
-
-    def test_refusal(self):
-        response = FakeResponse(FakeBlock({"command": "add"}), stop_reason="refusal")
-        assert ai_parser._extract(response) is None
-
-    def test_no_tool_call(self):
-        assert ai_parser._extract(FakeResponse()) is None
-
-    def test_every_delete_command_needs_confirmation(self):
-        deleting = {c for c in Command if c.keyword.startswith("remove")}
-        assert deleting <= ai_parser.CONFIRM_COMMANDS

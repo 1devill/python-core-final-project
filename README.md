@@ -166,8 +166,8 @@ Install the project with the development tools, inside the virtual environment:
 pip install -e ".[dev]"
 ```
 
-To work on the AI parser too, use `pip install -e ".[dev,ai]"`. Run the same command again
-after `pyproject.toml` changes.
+Run the same command again after `pyproject.toml` changes. To work on the AI parser too, see
+[AI parser](#ai-parser).
 
 | Tool                                           | Purpose                                  |
 | ---------------------------------------------- | ---------------------------------------- |
@@ -177,6 +177,68 @@ after `pyproject.toml` changes.
 | [pytest](https://docs.pytest.org)              | Tests                                    |
 
 All tools are configured in `pyproject.toml`. Black is the only formatter: do not use `ruff format`.
+
+### AI parser
+
+The AI parser is optional. It turns input that is not a known command into one, using the
+[Claude API](https://platform.claude.com/docs). Without its packages or an API key, the assistant
+works as usual.
+
+1. Install the extra packages:
+
+   ```bash
+   pip install -e ".[dev,ai]"
+   ```
+
+2. Create your local settings file in the project root:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Put your key from the [Claude Console](https://platform.claude.com/) in `.env`:
+
+   ```bash
+   ANTHROPIC_API_KEY=your_api_token_here
+   ASSISTANT_AI_MODEL=claude-haiku-5-5
+   ```
+
+4. Check that the assistant sees the settings:
+
+   ```bash
+   python -c "from personal_assistant.cli import ai_parser as a; print(a.is_enabled(), a.MODEL)"
+   ```
+
+   It prints `True` and the model name. This only checks that a key is set: a wrong key shows
+   `AI parser: invalid API key.` on the first request.
+
+5. Start the assistant from the project root and type something that is not a command:
+
+   ```text
+   please show all my contacts
+   ```
+
+   The assistant prints `Interpreted as: ...` and runs the command. Commands that delete data
+   ask for confirmation first.
+
+| Setting                | Purpose                                                                  |
+| ---------------------- | ------------------------------------------------------------------------ |
+| `ANTHROPIC_API_KEY`    | API key. `ANTHROPIC_AUTH_TOKEN` also works                               |
+| `ASSISTANT_AI_MODEL`   | Model to use. Without this setting: `claude-opus-5-5`                    |
+
+Good to know:
+
+- The file must be named `.env`: `.env.local` is not loaded.
+- `.env` is found only in the folder you start the assistant from, or a folder above it. To use
+  the AI parser from anywhere, export `ANTHROPIC_API_KEY` in your shell instead.
+- `.env` is ignored by Git. Never commit a real key, and do not put one in `.env.example`.
+- Requests cost money and are billed to the key's account.
+- Any line that is not a known command, typos included, is sent to the Anthropic API.
+- A line that starts with a known command never reaches the AI parser: `add anna to contacts`
+  runs `add`.
+
+Tests never call the API, so they need no key. Tests that use the real SDK are skipped without the
+`ai` extra.
 
 ### Checks before a pull request
 
