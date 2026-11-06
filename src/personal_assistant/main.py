@@ -43,9 +43,12 @@ def ai_command(user_input: str, keyword: str) -> tuple[Command, list[str]] | Non
 def save_data(storage: Storage, book: ContactBook, notes: NoteBook) -> None:
     """Save both books; if that fails, tell the user instead of crashing."""
     try:
-        storage.save(book, notes)
+        backup = storage.save(book, notes)
     except OSError as error:
         print(ui.error(f"Could not save your data, recent changes are not on disk: {error}"))
+        return
+    if backup:
+        print(ui.info(f"The damaged data file was kept as {backup}."))
 
 
 def main() -> None:
