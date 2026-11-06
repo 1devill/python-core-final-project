@@ -39,14 +39,34 @@ class Storage:
 
     def __init__(self, path: Path = DATA_FILE) -> None:
         self.path = path
+        self._backup_pending = False
+
+    def _save_backup(self) -> Path:
+        """Move the data file to a new backup, keeping older ones, and return its path."""
+        backup = self.path.with_name(f"{self.path.name}.bak")
+        counter = 0
+
+        while backup.exists():
+            counter += 1
+            backup = self.path.with_name(f"{self.path.name}.bak{counter}")
+        self.path.rename(backup)
+        return backup
 
     def save(self, book: ContactBook, notes: NoteBook) -> None:
-        """Write both books to the file, creating the folder if needed."""
+        """Write both books to the file, creating the folder if needed.
+
+        Raises OSError if the file can't be written, or if a damaged file is
+        still in the way and can't be backed up: it is never overwritten.
+        """
         payload = {
             "contacts": [pickle.dumps(c) for c in book.data.values()],
             "notes": [pickle.dumps(n) for n in notes.data.values()],
         }
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        if self._backup_pending:
+            if self.path.exists():
+                self._save_backup()
+            self._backup_pending = False
         tmp = self.path.with_suffix(self.path.suffix + ".tmp")
         with open(tmp, "wb") as file:
             pickle.dump(payload, file)
@@ -56,6 +76,7 @@ class Storage:
         """Load both books. Creates the file if missing.
 
         Returns the books and a list of warnings about skipped or ignored data.
+        A file with any unusable data is moved to a backup before it is replaced.
         """
         warnings: list[str] = []
         book, notes = ContactBook(), NoteBook()
@@ -67,6 +88,7 @@ class Storage:
             ("note", Note, payload.get("notes"), notes.add_note),
         ):
             if not isinstance(items, list):
+                warnings.append(f"Data file {self.path} has no valid {kind} list.")
                 items = []
             for blob in items:
                 try:
@@ -77,7 +99,14 @@ class Storage:
                 except Exception as e:
                     warnings.append(f"Skipped invalid {kind} record: {e!r}")
 
-        if not self.path.exists() or warnings:
+        if warnings:
+            try:
+                warnings.append(f"The original file was kept as {self._save_backup()}.")
+            except OSError as e:
+                self._backup_pending = True
+                warnings.append(f"Could not back up {self.path}, so it won't be replaced: {e}")
+
+        if not self.path.exists():
             try:
                 self.save(book, notes)
             except OSError as e:
@@ -93,9 +122,10 @@ class Storage:
             with open(self.path, "rb") as file:
                 payload = _SafeUnpickler(file).load()
         except EOFError:
+            warnings.append(f"Data file {self.path} is empty or truncated and was ignored.")
             return empty
         except Exception:
-            warnings.append(f"Data file {self.path} is corrupted and was ignored.")
+            warnings.append(f"Data file {self.path} is corrupted or unreadable and was ignored.")
             return empty
         if not isinstance(payload, dict):
             warnings.append(f"Data file {self.path} has unexpected content and was ignored.")
