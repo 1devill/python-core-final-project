@@ -86,5 +86,5 @@ class Text(Field):
 
     def __init__(self, value: str) -> None:
         if not value or value.strip() == "":
-            raise ValidationError(f"{self.__class__.__name__} Test must not be empty")
+            raise ValidationError(f"{self.__class__.__name__} Text must not be empty")
         super().__init__(value)

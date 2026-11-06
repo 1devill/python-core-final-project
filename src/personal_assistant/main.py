@@ -40,6 +40,14 @@ def ai_command(user_input: str, keyword: str) -> tuple[Command, list[str]] | Non
     return command, args
 
 
+def save_data(storage: Storage, book: ContactBook, notes: NoteBook) -> None:
+    """Save both books; if that fails, tell the user instead of crashing."""
+    try:
+        storage.save(book, notes)
+    except OSError as error:
+        print(ui.error(f"Could not save your data, recent changes are not on disk: {error}"))
+
+
 def main() -> None:
     """Run the interactive command loop until the user exits."""
     init(autoreset=True)
@@ -52,7 +60,7 @@ def main() -> None:
     try:
         run_loop(book, notes, storage)
     finally:
-        storage.save(book, notes)
+        save_data(storage, book, notes)
     print(ui.goodbye())
 
 
@@ -89,4 +97,4 @@ def run_loop(book: ContactBook, notes: NoteBook, storage: Storage) -> None:
             print(unknown_command(keyword))
             continue
         print(handler(args, notes if command in NOTE_COMMANDS else book))
-        storage.save(book, notes)
+        save_data(storage, book, notes)
