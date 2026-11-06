@@ -50,13 +50,13 @@ def main() -> None:
         print(ui.error(warning))
 
     try:
-        run_loop(book, notes)
+        run_loop(book, notes, storage)
     finally:
         storage.save(book, notes)
     print(ui.goodbye())
 
 
-def run_loop(book: ContactBook, notes: NoteBook) -> None:
+def run_loop(book: ContactBook, notes: NoteBook, storage: Storage) -> None:
     """Read and execute commands until the user exits."""
     while True:
         try:
@@ -89,3 +89,4 @@ def run_loop(book: ContactBook, notes: NoteBook) -> None:
             print(unknown_command(keyword))
             continue
         print(handler(args, notes if command in NOTE_COMMANDS else book))
+        storage.save(book, notes)
