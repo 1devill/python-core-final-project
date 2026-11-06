@@ -105,7 +105,7 @@ python-core-final-project/
     └── personal_assistant/
         ├── __init__.py
         ├── __main__.py            # enables `python -m personal_assistant`
-        ├── main.py                # main loop: load data → read input → dispatch → save on exit
+        ├── main.py                # main loop: load data → read input → dispatch → save after each command
         ├── exceptions.py          # custom exceptions (AssistantError, ValidationError, ...)
         ├── constants.py           # shared constants (date format, email regex)
         │
