@@ -3,9 +3,8 @@
 from personal_assistant.models import Note, NoteBook
 
 from . import ui
-
-from .decorators import handle_cmd_error
 from .command import Command, Handler
+from .decorators import handle_cmd_error
 from .parser import parse_filters
 
 SEARCH_KEYS = ("name", "tag", "text")
