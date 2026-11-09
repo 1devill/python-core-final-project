@@ -46,7 +46,7 @@ class Birthday(Field):
 
 class Phone(Field):
     def __init__(self, phone_num: str) -> None:
-        if not isinstance(phone_num, str) or not phone_num.isdigit():
+        if not isinstance(phone_num, str) or not re.fullmatch(r"[0-9]+", phone_num):
             raise ValidationError("Phone number must contain only digits")
 
         if len(phone_num) != 10:
@@ -74,7 +74,7 @@ class Tag(Field):
 
     def __init__(self, value: str) -> None:
         if not value or value.strip() == "":
-            raise ValidationError(f"{self.__class__.__name__} Tag must not be empty")
+            raise ValidationError(f"{self.__class__.__name__} must not be empty")
         super().__init__(value.lower())
 
 
@@ -85,5 +85,5 @@ class Text(Field):
 
     def __init__(self, value: str) -> None:
         if not value or value.strip() == "":
-            raise ValidationError(f"{self.__class__.__name__} Text must not be empty")
+            raise ValidationError(f"{self.__class__.__name__} must not be empty")
         super().__init__(value)

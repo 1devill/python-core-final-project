@@ -7,6 +7,7 @@ from typing import NamedTuple
 from personal_assistant.exceptions import ContactDoesNotExist, ValidationError
 
 from .contact import Contact
+from .fields import Name
 
 
 class UpcomingBirthday(NamedTuple):
@@ -29,6 +30,7 @@ class ContactBook(UserDict[str, Contact]):
         self.data[name] = contact
 
     def find(self, name: str) -> Contact:
+        name = Name(name).value
         if name not in self.data:
             raise ContactDoesNotExist(name)
         return self.data[name]

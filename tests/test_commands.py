@@ -205,9 +205,6 @@ class TestNoteCommands:
         assert "must not be empty" in run(line)
         assert len(notes) == 0
 
-    @pytest.mark.xfail(
-        strict=True, reason="BUG: brackets are stripped only when adding a tag"
-    )
     @pytest.mark.parametrize(
         "line",
         ["remove-note-tag shop [home]", "change-note-tag shop [home] office"],
@@ -217,16 +214,12 @@ class TestNoteCommands:
         run("add-note shop home,food buy milk")
         assert "not found" not in run(line)
 
-    @pytest.mark.xfail(
-        strict=True, reason="BUG: brackets are stripped only when adding a tag"
-    )
     def test_sort_notes_accepts_brackets(self, run):
         run("add-note alpha other text")
         run("add-note shop home text")
         answer = run("sort-notes [home]")
         assert answer.index("Shop") < answer.index("Alpha")
 
-    @pytest.mark.xfail(strict=True, reason="BUG: add-note-tag keeps 'a,b' as one tag")
     def test_add_note_tag_splits_commas_like_add_note(self, run, notes):
         run("add-note shop home text")
         run("add-note-tag shop a,b")

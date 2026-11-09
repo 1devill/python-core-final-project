@@ -60,9 +60,6 @@ class TestPhone:
         with pytest.raises(ValidationError):
             Phone(value)
 
-    @pytest.mark.xfail(
-        strict=True, reason="BUG: str.isdigit() accepts non-ASCII digits"
-    )
     @pytest.mark.parametrize("value", ["٠١٢٣٤٥٦٧٨٩", "²²²²²²²²²²"])
     def test_rejects_non_ascii_digits(self, value):
         with pytest.raises(ValidationError):
@@ -97,9 +94,6 @@ class TestEmail:
         with pytest.raises(ValidationError):
             Email(value)
 
-    @pytest.mark.xfail(
-        strict=True, reason="BUG: regex allows misplaced dots and hyphens"
-    )
     @pytest.mark.parametrize(
         "value", [".a@b.com", "a.@b.com", "a..b@c.com", "a@-b.com"]
     )
@@ -179,9 +173,6 @@ class TestTag:
         with pytest.raises(ValidationError):
             Tag(value)
 
-    @pytest.mark.xfail(
-        strict=True, reason="BUG: message reads 'Tag Tag must not be empty'"
-    )
     def test_error_message(self):
         with pytest.raises(ValidationError, match="^Tag must not be empty$"):
             Tag("")
@@ -197,9 +188,6 @@ class TestText:
     def test_keeps_original_case(self):
         assert Text("Call Anna at 5PM").value == "Call Anna at 5PM"
 
-    @pytest.mark.xfail(
-        strict=True, reason="BUG: message reads 'Text Tag must not be empty'"
-    )
     def test_error_message(self):
         with pytest.raises(ValidationError, match="^Text must not be empty$"):
             Text("")
