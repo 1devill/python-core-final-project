@@ -229,8 +229,9 @@ works as usual.
 Good to know:
 
 - The file must be named `.env`: `.env.local` is not loaded.
-- `.env` is found only in the folder you start the assistant from, or a folder above it. To use
-  the AI parser from anywhere, export `ANTHROPIC_API_KEY` in your shell instead.
+- `.env` is looked for in the folder you start the assistant from, or a folder above it, and then
+  in `~/.personal_assistant/.env`. Put the key in that last file to use the AI parser from any
+  folder. A variable already set in your shell is never overridden.
 - `.env` is ignored by Git. Never commit a real key, and do not put one in `.env.example`.
 - Requests cost money and are billed to the key's account.
 - Any line that is not a known command, typos included, is sent to the Anthropic API.

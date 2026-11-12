@@ -32,8 +32,14 @@ def ai_command(user_input: str, keyword: str) -> tuple[Command, list[str]] | Non
     except ai_parser.AIParserError as error:
         print(ui.error(str(error)))
         return None
+    except KeyboardInterrupt:
+        print(ui.info("Cancelled."))
+        return None
     if resolved is None:
         print(unknown_command(keyword))
+        return None
+    if isinstance(resolved, str):
+        print(ui.info(resolved))
         return None
     command, args = resolved
     print(ui.info(f"Interpreted as: {' '.join([command.value, *args])}"))

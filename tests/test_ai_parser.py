@@ -9,6 +9,7 @@ from conftest import plain
 from personal_assistant import main
 from personal_assistant.cli import Command, ai_parser
 from personal_assistant.models import Contact, ContactBook, NoteBook
+from personal_assistant.storage import Storage
 
 
 class FakeError(Exception):
@@ -85,6 +86,11 @@ def enabled(client, monkeypatch) -> FakeClient:
 
 
 @pytest.fixture
+def storage(tmp_path) -> Storage:
+    return Storage(tmp_path / "data.pkl")
+
+
+@pytest.fixture
 def type_lines(monkeypatch):
     """Answer input() with the given lines, then end the input."""
 
@@ -145,9 +151,6 @@ class TestPromptAndTool:
         assert Command.SHOW_UPCOMING_BIRTHDAYS.usage in prompt
         assert f"- {Command.EXIT.usage}:" not in prompt
 
-    @pytest.mark.xfail(
-        strict=True, reason="BUG: the prompt explains find-notes filters only"
-    )
     def test_system_prompt_explains_find_contacts_filters(self):
         rules = ai_parser._system_prompt().split("Rules:")[1]
         assert "find-contacts" in rules
@@ -156,9 +159,6 @@ class TestPromptAndTool:
         deleting = {c for c in Command if c.keyword.startswith("remove")}
         assert deleting <= ai_parser.CONFIRM_COMMANDS
 
-    @pytest.mark.xfail(
-        strict=True, reason="BUG: commands that overwrite data run unconfirmed"
-    )
     @pytest.mark.parametrize(
         "command",
         [
@@ -184,9 +184,6 @@ class TestParse:
         assert request["model"] == ai_parser.MODEL
         assert request["tools"] == [ai_parser._tool()]
 
-    @pytest.mark.xfail(
-        strict=True, reason="BUG: a second tool call is silently dropped"
-    )
     def test_asks_for_a_single_tool_call(self, client):
         client.result = reply(tool_call("hello"))
         ai_parser.parse("say hi")
@@ -199,7 +196,7 @@ class TestParse:
             (FakeAuthError(), "invalid API key"),
             (FakeRateLimitError(), "rate limited"),
             (FakeConnectionError(), "cannot reach the API"),
-            (FakeError("bad model"), "failed: bad model"),
+            (FakeError("bad model"), "AI parser failed"),
         ],
         ids=["auth", "rate-limit", "connection", "other"],
     )
@@ -262,16 +259,12 @@ class TestExtract:
             ai_parser._extract(reply(tool_call("all"), stop_reason="refusal")) is None
         )
 
-    @pytest.mark.xfail(strict=True, reason="BUG: a cut-off answer is still run")
     def test_answer_cut_off_by_max_tokens_is_not_run(self):
         response = reply(
             tool_call("add-note", ["a", "b", "c"]), stop_reason="max_tokens"
         )
         assert ai_parser._extract(response) is None
 
-    @pytest.mark.xfail(
-        strict=True, raises=TypeError, reason="BUG: args=null crashes the app"
-    )
     def test_null_args_do_not_crash(self):
         block = SimpleNamespace(
             type="tool_use",
@@ -296,13 +289,10 @@ class TestAiCommand:
         assert "invalid API key" in plain(capsys.readouterr().out)
 
     def test_no_match_falls_back_to_unknown_command(self, client, capsys):
-        client.result = reply(text_block(), stop_reason="end_turn")
+        client.result = reply(stop_reason="end_turn")
         assert main.ai_command("what is love", "what") is None
         assert "Unknown command 'what'" in plain(capsys.readouterr().out)
 
-    @pytest.mark.xfail(
-        strict=True, reason="BUG: the model's explanation is thrown away"
-    )
     def test_model_explanation_is_shown(self, client, capsys):
         client.result = reply(
             text_block("I can only manage contacts."), stop_reason="end_turn"
@@ -331,9 +321,6 @@ class TestAiCommand:
         type_lines()
         assert main.ai_command("delete anna", "delete") is None
 
-    @pytest.mark.xfail(
-        strict=True, reason="BUG: Ctrl+C during the request ends in a traceback"
-    )
     def test_ctrl_c_during_the_request_cancels(self, client):
         client.result = KeyboardInterrupt()
         try:
@@ -351,9 +338,11 @@ class TestMainLoop:
         book.add_contact(contact)
         return book
 
-    def test_known_commands_never_reach_the_api(self, enabled, type_lines, book):
+    def test_known_commands_never_reach_the_api(
+        self, storage, enabled, type_lines, book
+    ):
         type_lines("all", "hello")
-        main.run_loop(book, NoteBook())
+        main.run_loop(book, NoteBook(), storage)
         assert enabled.requests == []
 
     def test_unknown_input_is_stopped_while_off(
@@ -362,62 +351,68 @@ class TestMainLoop:
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
         type_lines("nonsense words")
-        main.run_loop(book, NoteBook())
+        main.run_loop(book, NoteBook(), storage)
         assert client.requests == []
         assert "Unknown command 'nonsense'" in plain(capsys.readouterr().out)
 
-    def test_the_whole_line_goes_to_the_model(self, enabled, type_lines, book):
+    def test_the_whole_line_goes_to_the_model(self, storage, enabled, type_lines, book):
         enabled.result = reply(tool_call("all"))
         type_lines("Please Show Everyone")
-        main.run_loop(book, NoteBook())
+        main.run_loop(book, NoteBook(), storage)
         assert enabled.requests[0]["messages"][0]["content"] == "Please Show Everyone"
 
-    def test_chosen_command_runs_on_the_right_book(self, enabled, type_lines, book):
+    def test_chosen_command_runs_on_the_right_book(
+        self, storage, enabled, type_lines, book
+    ):
         notes = NoteBook()
         enabled.result = reply(tool_call("add-note", ["shop", "home", "buy", "milk"]))
         type_lines("remember to buy milk")
-        main.run_loop(book, notes)
+        main.run_loop(book, notes, storage)
         assert "Shop" in notes
         assert len(book) == 1
 
     def test_invalid_values_are_still_validated(
-        self, enabled, type_lines, book, capsys
+        self, storage, enabled, type_lines, book, capsys
     ):
         enabled.result = reply(tool_call("add", ["bob", "123"]))
         type_lines("save bob")
-        main.run_loop(book, NoteBook())
+        main.run_loop(book, NoteBook(), storage)
         assert "Bob" not in book
         assert "10 digits" in plain(capsys.readouterr().out)
 
     def test_wrong_args_from_the_model_show_usage(
-        self, enabled, type_lines, book, capsys
+        self, storage, enabled, type_lines, book, capsys
     ):
         enabled.result = reply(tool_call("add-email", ["anna"]))
-        type_lines("mail for anna")
-        main.run_loop(book, NoteBook())
+        type_lines("mail for anna", "y")
+        main.run_loop(book, NoteBook(), storage)
         assert "Usage: add-email" in plain(capsys.readouterr().out)
 
-    def test_delete_runs_only_after_yes(self, enabled, type_lines, book):
+    def test_delete_runs_only_after_yes(self, storage, enabled, type_lines, book):
         enabled.result = reply(tool_call("remove", ["anna"]))
         type_lines("drop anna", "n")
-        main.run_loop(book, NoteBook())
+        main.run_loop(book, NoteBook(), storage)
         assert "Anna" in book
         type_lines("drop anna", "y")
-        main.run_loop(book, NoteBook())
+        main.run_loop(book, NoteBook(), storage)
         assert "Anna" not in book
 
-    def test_loop_survives_an_api_error(self, enabled, type_lines, book, capsys):
+    def test_loop_survives_an_api_error(
+        self, storage, enabled, type_lines, book, capsys
+    ):
         enabled.result = FakeConnectionError()
         type_lines("first try", "hello")
-        main.run_loop(book, NoteBook())
+        main.run_loop(book, NoteBook(), storage)
         output = plain(capsys.readouterr().out)
         assert "cannot reach the API" in output
         assert "Hello!" in output
 
-    def test_model_cannot_exit_the_app(self, enabled, type_lines, book, capsys):
+    def test_model_cannot_exit_the_app(
+        self, storage, enabled, type_lines, book, capsys
+    ):
         enabled.result = reply(tool_call("exit"))
         type_lines("leave now", "hello")
-        main.run_loop(book, NoteBook())
+        main.run_loop(book, NoteBook(), storage)
         assert "Hello!" in plain(capsys.readouterr().out)
 
 
@@ -517,9 +512,6 @@ class TestRealSdk:
         with pytest.raises(ai_parser.AIParserError, match="cannot reach the API"):
             ai_parser.parse("save anna")
 
-    @pytest.mark.xfail(
-        strict=True, reason="BUG: raw API error text is shown to the user"
-    )
     def test_error_message_is_readable(self, connect):
         body = {"type": "error", "error": {"type": "api_error", "message": "boom"}}
         connect(lambda http, request: http.Response(500, json=body))
