@@ -92,7 +92,7 @@ class Command(Enum):
     )
     ADD_NOTE_TAG = (
         "add-note-tag",
-        "add-note-tag [name] [tag]",
+        "add-note-tag [name] [tag1,tag2]",
         "Add a tag to a note",
     )
     CHANGE_NOTE_TAG = (

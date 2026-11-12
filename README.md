@@ -78,7 +78,7 @@ The assistant runs in an interactive loop: type a command, press Enter, and it r
 | `find-notes [name=..] [tag=..] [text=..]`                    | Find notes matching all given filters           |
 | `sort-notes [tag]`                                           | Show all notes, the ones with `[tag]` first     |
 | `change-note-text [name] [text]`                             | Replace a note's text                           |
-| `add-note-tag [name] [tag]`                                  | Add a tag to a note                             |
+| `add-note-tag [name] [tag1,tag2]`                            | Add a tag to a note                             |
 | `change-note-tag [name] [old tag] [new tag]`                 | Replace a note's tag                            |
 | `remove-note-tag [name] [tag]`                               | Remove a tag (the last one can't be removed)    |
 | `remove-note [name]`                                         | Remove a note                                   |

@@ -35,11 +35,6 @@ class TestLookup:
         book.delete("Anna")
         assert "Anna" not in book
 
-    @pytest.mark.xfail(
-        strict=True,
-        raises=ContactDoesNotExist,
-        reason="BUG: ContactBook.find is case-sensitive, NoteBook.get_note is not",
-    )
     def test_find_ignores_case_like_notebook(self, book, make_contact):
         make_contact("anna")
         assert book.find("anna").name.value == "Anna"

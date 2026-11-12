@@ -1,5 +1,6 @@
 """Note command handlers and the NOTE_COMMANDS dict."""
 
+from personal_assistant.exceptions import ValidationError
 from personal_assistant.models import Note, NoteBook
 
 from . import ui
@@ -19,6 +20,17 @@ def strip_brackets(tags: str) -> str:
     :return: tags without the surrounding brackets: str
     """
     return tags.strip("[]")
+
+
+def existing_tag(note: Note, tag: str) -> str:
+    """
+    the tag to look up on a note, typed with or without brackets
+    :param note: Note
+    :param tag: tag as typed: str
+    :return: the tag as typed if the note has it (saved before brackets were stripped),
+        otherwise the tag without brackets: str
+    """
+    return tag if note.find_by_tag(tag) else strip_brackets(tag)
 
 
 @handle_cmd_error(Command.ADD_NOTE)
@@ -61,11 +73,19 @@ def add_note_tag(args: list[str], book: NoteBook) -> str:
     :return: answer to print; a missing note (NoteDoesNotExist), an existing tag (ValidationError)
         and wrong args (ValueError) are handled by handle_cmd_error
     """
-    name, tag = args
-    tag = strip_brackets(tag)
+    name, tags = args
     note = book.get_note(name)
-    note.edit_tag(tag)
-    return ui.success(f"Tag '{tag.lower()}' added to '{ui.highlight(note.name)}'.")
+    new_tags = strip_brackets(tags).split(",")
+    before = [tag.value for tag in note.tags]
+    try:
+        for tag in new_tags:
+            note.edit_tag(tag)
+    except ValidationError:
+        note.tags = before  # all or nothing, like add-note
+        raise
+    added = ", ".join(f"'{tag.lower()}'" for tag in new_tags)
+    label = "Tag" if len(new_tags) == 1 else "Tags"
+    return ui.success(f"{label} {added} added to '{ui.highlight(note.name)}'.")
 
 
 @handle_cmd_error(Command.CHANGE_NOTE_TAG)
@@ -81,6 +101,7 @@ def change_note_tag(args: list[str], book: NoteBook) -> str:
     name, old_tag, new_tag = args
     new_tag = strip_brackets(new_tag)
     note = book.get_note(name)
+    old_tag = existing_tag(note, old_tag)
     note.edit_tag(new_tag, old_tag)
     return ui.success(
         f"Tag '{old_tag.lower()}' replaced with '{new_tag.lower()}' in '{ui.highlight(note.name)}'."
@@ -98,6 +119,7 @@ def remove_note_tag(args: list[str], book: NoteBook) -> str:
     """
     name, tag = args
     note = book.get_note(name)
+    tag = existing_tag(note, tag)
     note.remove_tag(tag)
     return ui.success(f"Tag '{tag.lower()}' removed from '{ui.highlight(note.name)}'.")
 
@@ -136,7 +158,7 @@ def sort_notes(args: list[str], book: NoteBook) -> str:
     :return: note cards; wrong args (ValueError) are handled by handle_cmd_error
     """
     (tag,) = args
-    return ui.note_list(book.sort_by_tag(tag))
+    return ui.note_list(book.sort_by_tag(strip_brackets(tag)))
 
 
 @handle_cmd_error(Command.FIND_NOTES)
