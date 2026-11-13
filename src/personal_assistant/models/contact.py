@@ -7,6 +7,10 @@ from .fields import Address, Birthday, Email, Name, Phone
 
 class Contact:
     def __init__(self, name: str) -> None:
+        self._setup(name)
+
+    def _setup(self, name: str) -> None:
+        """Set the name and start with no other fields; shared by __init__ and __setstate__."""
         self.name = Name(name)
         self.phones: list[Phone] = []
         self.birthday: Birthday | None = None
@@ -36,7 +40,7 @@ class Contact:
 
     def __setstate__(self, state: dict) -> None:
         """Rebuild the contact through the field constructors; raises on invalid data."""
-        self.__init__(state["name"])
+        self._setup(state["name"])
         for phone in state.get("phones") or []:
             self.add_phone(phone)
         if state.get("birthday") is not None:

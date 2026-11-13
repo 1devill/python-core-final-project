@@ -16,8 +16,12 @@ class Note:
         :param tags: note tags: list[str] (at least one, unique in any case)
         :param text: note text: str (must not be empty)
         """
+        self._setup(name, tags, text)
+
+    def _setup(self, name: str, tags: list[str], text: str) -> None:
+        """Validate and set all fields; shared by __init__ and __setstate__."""
         self.name = Name(name)
-        self.tags = tags
+        self.set_tags(tags)
         self.text = Text(text)
 
     def __str__(self) -> str:
@@ -37,7 +41,7 @@ class Note:
 
     def __setstate__(self, state: dict) -> None:
         """Rebuild the note through the field constructors; raises on invalid data."""
-        self.__init__(state["name"], state["tags"], state["text"])
+        self._setup(state["name"], state["tags"], state["text"])
 
     @property
     def tags(self) -> list[Tag]:
@@ -47,8 +51,7 @@ class Note:
         """
         return self._tags
 
-    @tags.setter
-    def tags(self, value: list[str]) -> None:
+    def set_tags(self, value: list[str]) -> None:
         """
         replace all tags of the note
         :param value: tags: list[str]; raises ValidationError if the list is empty, a tag is empty

@@ -59,7 +59,11 @@ def save_data(storage: Storage, book: ContactBook, notes: NoteBook) -> None:
     try:
         backup = storage.save(book, notes)
     except OSError as error:
-        print(ui.error(f"Could not save your data, recent changes are not on disk: {error}"))
+        print(
+            ui.error(
+                f"Could not save your data, recent changes are not on disk: {error}"
+            )
+        )
         return
     if backup:
         print(ui.info(f"The damaged data file was kept as {backup}."))

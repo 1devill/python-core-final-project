@@ -58,6 +58,7 @@ def run(book, notes):
     def execute(line: str) -> str:
         keyword, args = parse_input(line)
         command = Command.parse(keyword)
+        assert command is not None, f"unknown command: {keyword}"
         target = notes if command in NOTE_COMMANDS else book
         return plain(COMMANDS[command](args, target))
 
@@ -79,13 +80,21 @@ def freeze_today(monkeypatch):
     return freeze
 
 
-@pytest.fixture
-def app(tmp_path):
-    """Start the real app in a temporary home folder and feed it input lines."""
-    home = tmp_path / "home"
-    home.mkdir(exist_ok=True)
+class App:
+    """The real app in a temporary home folder; call it with input lines."""
 
-    def start(*lines: str, end_with_exit: bool = True) -> subprocess.CompletedProcess:
+    def __init__(self, home: Path) -> None:
+        self.home = home
+
+    def __call__(
+        self, *lines: str, end_with_exit: bool = True
+    ) -> subprocess.CompletedProcess:
+        return self._run(lines, end_with_exit)
+
+    def _run(
+        self, lines: tuple[str, ...], end_with_exit: bool
+    ) -> subprocess.CompletedProcess:
+        home = self.home
         typed = [*lines, "exit"] if end_with_exit else list(lines)
         env = {
             **os.environ,
@@ -109,5 +118,10 @@ def app(tmp_path):
         result.stdout = plain(result.stdout)
         return result
 
-    start.home = home
-    return start
+
+@pytest.fixture
+def app(tmp_path):
+    """Start the real app in a temporary home folder and feed it input lines."""
+    home = tmp_path / "home"
+    home.mkdir(exist_ok=True)
+    return App(home)

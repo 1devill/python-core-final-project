@@ -81,7 +81,7 @@ def add_note_tag(args: list[str], book: NoteBook) -> str:
         for tag in new_tags:
             note.edit_tag(tag)
     except ValidationError:
-        note.tags = before  # all or nothing, like add-note
+        note.set_tags(before)  # all or nothing, like add-note
         raise
     added = ", ".join(f"'{tag.lower()}'" for tag in new_tags)
     label = "Tag" if len(new_tags) == 1 else "Tags"
