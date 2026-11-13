@@ -32,7 +32,11 @@ class Note:
         )
 
     def __getstate__(self) -> dict:
-        """Plain built-in data used by pickle to save the note."""
+        """Plain built-in data used by pickle to save the note.
+
+        Only strings are stored (not Name/Tag/Text objects), so the file does not depend
+        on the field classes and stays loadable if they change.
+        """
         return {
             "name": self.name.value,
             "tags": [tag.value for tag in self.tags],
@@ -40,7 +44,11 @@ class Note:
         }
 
     def __setstate__(self, state: dict) -> None:
-        """Rebuild the note through the field constructors; raises on invalid data."""
+        """Rebuild the note through the field constructors; raises on invalid data.
+
+        Going through the constructors re-validates every value, so a corrupted or
+        hand-edited file cannot bring invalid data into the book.
+        """
         self._setup(state["name"], state["tags"], state["text"])
 
     @property
