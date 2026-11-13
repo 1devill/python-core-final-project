@@ -19,9 +19,14 @@ except ImportError:  # the AI parser is an optional extra
     anthropic = None
 
 try:  # read ANTHROPIC_API_KEY / ASSISTANT_AI_MODEL from a .env file, if any
+    from pathlib import Path
+
     from dotenv import find_dotenv, load_dotenv
 
+    # load_dotenv does not override values already set, so the first source wins:
+    # the environment, then a .env near the current folder, then the fixed location.
     load_dotenv(find_dotenv(usecwd=True))
+    load_dotenv(Path.home() / ".personal_assistant" / ".env")
 except ImportError:
     pass
 
@@ -40,7 +45,17 @@ CONFIRM_COMMANDS = {
     Command.REMOVE_ADDRESS,
     Command.REMOVE_NOTE,
     Command.REMOVE_NOTE_TAG,
+    # They replace existing data based on the model's guess.
+    Command.CHANGE_PHONE,
+    Command.CHANGE_NOTE_TEXT,
+    Command.CHANGE_NOTE_TAG,
+    Command.ADD_BIRTHDAY,
+    Command.ADD_EMAIL,
+    Command.ADD_ADDRESS,
 }
+
+# Answers that are never run: declined, or cut off before the arguments were complete.
+_NOT_RUN = ("refusal", "max_tokens")
 
 _client = None
 
@@ -76,7 +91,12 @@ def _system_prompt() -> str:
         "- Birthdays must be DD.MM.YYYY. Convert dates like 'March 5, 1990' to 05.03.1990.\n"
         "- Tags are one comma-separated argument without spaces, e.g. work,urgent.\n"
         "- Free text (an address, a note text) may be one argument or several words.\n"
+        "- You can run only one command per request. If the request needs several "
+        "commands, do not call the tool; answer in one short sentence asking the user "
+        "to send them one at a time.\n"
         "- find-notes filters are arguments like name=..., tag=..., text=....\n"
+        "- find-contacts filters are arguments like name=..., phone=..., email=..., "
+        "address=...; give only the filters the user mentioned.\n"
         f"- Today is {date.today().strftime('%d.%m.%Y')}."
     )
 
@@ -108,10 +128,13 @@ def _get_client():
     return _client
 
 
-def parse(user_input: str) -> tuple[Command, list[str]] | None:
-    """Return the command and arguments the user meant, or None if nothing fits.
+def parse(user_input: str) -> tuple[Command, list[str]] | str | None:
+    """Return the command and arguments the user meant.
 
-    :raises AIParserError: the request failed (network, auth, rate limit, refusal)
+    If no command fits, return the model's explanation, or None if it gave none.
+
+    :raises AIParserError: the request failed (network, auth, rate limit, API error).
+    A refusal or a cut-off answer is not an error: it returns None.
     """
     try:
         response = _get_client().messages.create(
@@ -120,6 +143,7 @@ def parse(user_input: str) -> tuple[Command, list[str]] | None:
             output_config={"effort": "low"},
             system=_system_prompt(),
             tools=[_tool()],
+            tool_choice={"type": "auto", "disable_parallel_tool_use": True},
             messages=[{"role": "user", "content": user_input}],
         )
     except anthropic.AuthenticationError:
@@ -129,19 +153,30 @@ def parse(user_input: str) -> tuple[Command, list[str]] | None:
     except anthropic.APIConnectionError:
         raise AIParserError("AI parser: cannot reach the API.") from None
     except anthropic.APIError as error:
-        raise AIParserError(f"AI parser failed: {error.message}") from None
-    return _extract(response)
+        status = getattr(error, "status_code", None)
+        suffix = f" (HTTP {status})" if status else ""
+        raise AIParserError(f"AI parser failed{suffix}, try again later.") from None
+    resolved = _extract(response)
+    if resolved is None and response.stop_reason not in _NOT_RUN:
+        return _explanation(response) or None
+    return resolved
+
+
+def _explanation(response) -> str:
+    """The model's text reply, used when it chose no command."""
+    texts = (b.text.strip() for b in response.content if b.type == "text")
+    return " ".join(text for text in texts if text)
 
 
 def _extract(response) -> tuple[Command, list[str]] | None:
     """Pull the command out of a response; None if the model chose no command."""
-    if response.stop_reason == "refusal":
+    if response.stop_reason in _NOT_RUN:
         return None
     for block in response.content:
         if block.type == "tool_use" and block.name == TOOL_NAME:
             command = Command.parse(str(block.input.get("command", "")))
             if command is None or command in EXCLUDED:
                 return None
-            args = [str(arg) for arg in block.input.get("args", [])]
+            args = [str(arg) for arg in block.input.get("args") or []]
             return command, args
     return None

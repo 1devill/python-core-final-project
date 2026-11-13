@@ -218,8 +218,9 @@ works as usual.
    please show all my contacts
    ```
 
-   The assistant prints `Interpreted as: ...` and runs the command. Commands that delete data
-   ask for confirmation first.
+   The assistant prints `Interpreted as: ...` and runs the command. Commands that delete or
+   overwrite data (`remove-*`, `change-*`, `add-birthday`, `add-email`, `add-address`) ask for
+   confirmation first.
 
 | Setting                | Purpose                                                                  |
 | ---------------------- | ------------------------------------------------------------------------ |
@@ -229,9 +230,14 @@ works as usual.
 Good to know:
 
 - The file must be named `.env`: `.env.local` is not loaded.
-- `.env` is found only in the folder you start the assistant from, or a folder above it. To use
-  the AI parser from anywhere, export `ANTHROPIC_API_KEY` in your shell instead.
+- `.env` is looked for in the folder you start the assistant from, or a folder above it, and then
+  in `~/.personal_assistant/.env`. Put the key in that last file to use the AI parser from any
+  folder. A variable already set in your shell is never overridden.
 - `.env` is ignored by Git. Never commit a real key, and do not put one in `.env.example`.
+- One request runs one command. If you ask for several, the assistant asks you to send them one
+  at a time. If no command fits, it prints the model's short explanation instead of
+  `Unknown command`.
+- Press Ctrl+C while waiting for the answer to cancel the request.
 - Requests cost money and are billed to the key's account.
 - Any line that is not a known command, typos included, is sent to the Anthropic API.
 - A line that starts with a known command never reaches the AI parser: `add anna to contacts`
