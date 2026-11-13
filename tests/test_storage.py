@@ -54,7 +54,10 @@ def test_round_trip(storage):
     assert warnings == []
     assert list(loaded_book) == list(book)
     assert loaded_book["Anna"].__getstate__() == book["Anna"].__getstate__()
-    assert loaded_book["Anna"].birthday.bd_date == book["Anna"].birthday.bd_date
+    loaded_birthday = loaded_book["Anna"].birthday
+    original_birthday = book["Anna"].birthday
+    assert loaded_birthday is not None and original_birthday is not None
+    assert loaded_birthday.bd_date == original_birthday.bd_date
     assert loaded_notes["Shop"].__getstate__() == notes["Shop"].__getstate__()
 
 

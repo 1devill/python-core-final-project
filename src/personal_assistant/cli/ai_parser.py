@@ -10,9 +10,12 @@ exactly as before.
 
 import os
 from datetime import date
+from types import ModuleType
 
 from personal_assistant.cli.command import Command
+from personal_assistant.exceptions import AIParserError
 
+anthropic: ModuleType | None
 try:
     import anthropic
 except ImportError:  # the AI parser is an optional extra
@@ -58,10 +61,6 @@ CONFIRM_COMMANDS = {
 _NOT_RUN = ("refusal", "max_tokens")
 
 _client = None
-
-
-class AIParserError(Exception):
-    """The AI request failed; the message is safe to show to the user."""
 
 
 def is_enabled() -> bool:
@@ -123,6 +122,7 @@ def _tool() -> dict:
 
 def _get_client():
     global _client
+    assert anthropic is not None  # parse() checks this before asking for a client
     if _client is None:
         _client = anthropic.Anthropic(timeout=30.0, max_retries=1)
     return _client
@@ -136,6 +136,8 @@ def parse(user_input: str) -> tuple[Command, list[str]] | str | None:
     :raises AIParserError: the request failed (network, auth, rate limit, API error).
     A refusal or a cut-off answer is not an error: it returns None.
     """
+    if anthropic is None:
+        raise AIParserError("The 'anthropic' package is not installed.")
     try:
         response = _get_client().messages.create(
             model=MODEL,

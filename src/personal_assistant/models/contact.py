@@ -6,7 +6,13 @@ from .fields import Address, Birthday, Email, Name, Phone
 
 
 class Contact:
+    """One person in the address book: a name plus optional phones, birthday, email, address."""
+
     def __init__(self, name: str) -> None:
+        self._setup(name)
+
+    def _setup(self, name: str) -> None:
+        """Set the name and start with no other fields; shared by __init__ and __setstate__."""
         self.name = Name(name)
         self.phones: list[Phone] = []
         self.birthday: Birthday | None = None
@@ -25,7 +31,11 @@ class Contact:
         return result
 
     def __getstate__(self) -> dict:
-        """Plain built-in data used by pickle to save the contact."""
+        """Plain built-in data used by pickle to save the contact.
+
+        Only strings are stored (not Name/Phone objects), so the file does not depend
+        on the field classes and stays loadable if they change.
+        """
         return {
             "name": self.name.value,
             "phones": [phone.value for phone in self.phones],
@@ -35,8 +45,12 @@ class Contact:
         }
 
     def __setstate__(self, state: dict) -> None:
-        """Rebuild the contact through the field constructors; raises on invalid data."""
-        self.__init__(state["name"])
+        """Rebuild the contact through the field constructors; raises on invalid data.
+
+        Going through the constructors re-validates every value, so a corrupted or
+        hand-edited file cannot bring invalid data into the book.
+        """
+        self._setup(state["name"])
         for phone in state.get("phones") or []:
             self.add_phone(phone)
         if state.get("birthday") is not None:
