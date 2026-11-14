@@ -111,6 +111,7 @@ def test_killed_app_keeps_finished_commands(app):
         encoding="utf-8",
         env=env,
     )
+    assert process.stdin is not None and process.stdout is not None
     process.stdin.write("add anna 0123456789\n")
     process.stdin.flush()
     for line in process.stdout:

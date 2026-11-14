@@ -11,13 +11,16 @@ import io
 import os
 import pickle
 import shutil
-
+from collections.abc import Callable
 from pathlib import Path
+from typing import TypeVar
 
 from personal_assistant.models import Contact, ContactBook, Note, NoteBook
 
 DATA_DIR = Path.home() / ".personal_assistant"
 DATA_FILE = DATA_DIR / "data.pkl"
+T = TypeVar("T")
+
 _EMPTY_PAYLOAD: dict = {"contacts": [], "notes": []}
 
 _ALLOWED_CLASSES = {
@@ -59,12 +62,13 @@ class Storage:
         while backup.exists():
             counter += 1
             backup = target.with_name(f"{target.name}.bak{counter}")
+        moved: Path | None = backup
         try:
             target.rename(backup)
         except FileNotFoundError:
-            backup = None
+            moved = None
         self._backup_pending = False
-        return backup
+        return moved
 
     def save(self, book: ContactBook, notes: NoteBook) -> Path | None:
         """Write both books to the file, creating the folder if needed.
@@ -91,6 +95,27 @@ class Storage:
         os.replace(tmp, target)
         return backup
 
+    def _load_records(
+        self,
+        kind: str,
+        cls: type[T],
+        items: object,
+        add: Callable[[T], None],
+        warnings: list[str],
+    ) -> None:
+        """Unpickle every record of one kind and add it; bad records become warnings."""
+        if not isinstance(items, list):
+            warnings.append(f"Data file {self.path} has no valid {kind} list.")
+            return
+        for blob in items:
+            try:
+                obj = _SafeUnpickler(io.BytesIO(blob)).load()
+                if not isinstance(obj, cls):
+                    raise TypeError(f"expected {cls.__name__}")
+                add(obj)
+            except Exception as e:
+                warnings.append(f"Skipped invalid {kind} record: {e!r}")
+
     def load(self) -> tuple[ContactBook, NoteBook, list[str]]:
         """Load both books. Creates the file if missing.
 
@@ -105,21 +130,10 @@ class Storage:
         if payload is None:
             payload = _EMPTY_PAYLOAD
 
-        for kind, cls, items, add in (
-            ("contact", Contact, payload.get("contacts"), book.add_contact),
-            ("note", Note, payload.get("notes"), notes.add_note),
-        ):
-            if not isinstance(items, list):
-                warnings.append(f"Data file {self.path} has no valid {kind} list.")
-                items = []
-            for blob in items:
-                try:
-                    obj = _SafeUnpickler(io.BytesIO(blob)).load()
-                    if not isinstance(obj, cls):
-                        raise TypeError(f"expected {cls.__name__}")
-                    add(obj)
-                except Exception as e:
-                    warnings.append(f"Skipped invalid {kind} record: {e!r}")
+        self._load_records(
+            "contact", Contact, payload.get("contacts"), book.add_contact, warnings
+        )
+        self._load_records("note", Note, payload.get("notes"), notes.add_note, warnings)
 
         if warnings:
             self._backup_pending = True
@@ -129,7 +143,9 @@ class Storage:
                 if backup:
                     warnings.append(f"The original file was kept as {backup}.")
             except OSError as e:
-                warnings.append(f"Could not back up {self.path}, so it won't be replaced: {e}")
+                warnings.append(
+                    f"Could not back up {self.path}, so it won't be replaced: {e}"
+                )
 
         if create_file:
             try:
@@ -151,14 +167,22 @@ class Storage:
         except FileNotFoundError:
             return None
         except EOFError:
-            warnings.append(f"Data file {self.path} is empty or truncated and was ignored.")
+            warnings.append(
+                f"Data file {self.path} is empty or truncated and was ignored."
+            )
             return _EMPTY_PAYLOAD
         except Exception:
-            warnings.append(f"Data file {self.path} is corrupted or unreadable and was ignored.")
+            warnings.append(
+                f"Data file {self.path} is corrupted or unreadable and was ignored."
+            )
             return _EMPTY_PAYLOAD
         if not isinstance(payload, dict):
-            warnings.append(f"Data file {self.path} has unexpected content and was ignored.")
+            warnings.append(
+                f"Data file {self.path} has unexpected content and was ignored."
+            )
             return _EMPTY_PAYLOAD
         if has_trailing_data or set(payload) - set(_EMPTY_PAYLOAD):
-            warnings.append(f"Data file {self.path} has extra data that the app doesn't use.")
+            warnings.append(
+                f"Data file {self.path} has extra data that the app doesn't use."
+            )
         return payload

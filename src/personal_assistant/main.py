@@ -12,6 +12,7 @@ from personal_assistant.cli import (
     parse_input,
     ui,
 )
+from personal_assistant.exceptions import AIParserError
 from personal_assistant.models import ContactBook, NoteBook
 from personal_assistant.storage import Storage
 
@@ -29,7 +30,7 @@ def ai_command(user_input: str, keyword: str) -> tuple[Command, list[str]] | Non
     """Ask the AI parser what the user meant; print the outcome and return None to skip."""
     try:
         resolved = ai_parser.parse(user_input)
-    except ai_parser.AIParserError as error:
+    except AIParserError as error:
         print(ui.error(str(error)))
         return None
     except KeyboardInterrupt:
@@ -59,7 +60,11 @@ def save_data(storage: Storage, book: ContactBook, notes: NoteBook) -> None:
     try:
         backup = storage.save(book, notes)
     except OSError as error:
-        print(ui.error(f"Could not save your data, recent changes are not on disk: {error}"))
+        print(
+            ui.error(
+                f"Could not save your data, recent changes are not on disk: {error}"
+            )
+        )
         return
     if backup:
         print(ui.info(f"The damaged data file was kept as {backup}."))

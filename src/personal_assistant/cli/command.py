@@ -185,7 +185,8 @@ class Command(Enum):
     def parse(cls, keyword: str) -> "Command | None":
         """Return the command for a keyword or alias, or None if unknown."""
         try:
-            return cls(keyword)
+            # False alarm: the custom __new__ takes one value and looks the member up.
+            return cls(keyword)  # type: ignore[call-arg]
         except ValueError:
             return None
 

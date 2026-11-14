@@ -102,6 +102,7 @@ def test_state_round_trip(contact):
     restored = Contact.__new__(Contact)
     restored.__setstate__(contact.__getstate__())
     assert restored.__getstate__() == contact.__getstate__()
+    assert restored.birthday is not None and contact.birthday is not None
     assert restored.birthday.bd_date == contact.birthday.bd_date
 
 

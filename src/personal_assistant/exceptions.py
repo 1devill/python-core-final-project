@@ -23,3 +23,7 @@ class NoteDoesNotExist(AssistantError):
     def __init__(self, name: str):
         super().__init__(f"Note '{name}' does not exist.")
         self.name = name
+
+
+class AIParserError(AssistantError):
+    """Raised when the AI request fails; the message is safe to show to the user."""
