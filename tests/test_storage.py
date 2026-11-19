@@ -143,6 +143,17 @@ def test_record_with_invalid_field_is_skipped(storage, path):
     assert len(problems(warnings)) == 1
 
 
+def test_record_with_empty_address_is_skipped(storage, path):
+    contact = Contact("broken")
+    contact.add_address("Kyiv")
+    assert contact.address is not None
+    contact.address.value = "   "
+    write_payload(path, contacts=[pickle.dumps(contact), good_contact("anna")])
+    book, _, warnings = storage.load()
+    assert list(book) == ["Anna"]
+    assert len(problems(warnings)) == 1
+
+
 def test_duplicate_record_is_skipped(storage, path):
     write_payload(path, contacts=[good_contact(), good_contact()])
     book, _, warnings = storage.load()

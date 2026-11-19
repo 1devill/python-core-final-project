@@ -107,6 +107,17 @@ class TestAddress:
         with pytest.raises(ValidationError):
             Address(value)
 
+    def test_strips_surrounding_spaces(self):
+        assert Address("  Kyiv Main St 5  ").value == "Kyiv Main St 5"
+
+    def test_accepts_max_length(self):
+        value = "a" * Address.MAX_LENGTH
+        assert Address(value).value == value
+
+    def test_rejects_too_long(self):
+        with pytest.raises(ValidationError, match="at most"):
+            Address("a" * (Address.MAX_LENGTH + 1))
+
 
 class TestBirthday:
     def test_parses_date(self):

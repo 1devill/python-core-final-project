@@ -1,6 +1,6 @@
 """Contact command handlers and the CONTACT_COMMANDS dict."""
 
-from personal_assistant.exceptions import ContactDoesNotExist
+from personal_assistant.exceptions import ContactDoesNotExist, ValidationError
 from personal_assistant.models import Contact, ContactBook
 from personal_assistant.models.fields import Name
 
@@ -89,16 +89,37 @@ def add_email(args: list[str], book: ContactBook) -> str:
     return ui.success(f"Email added for '{ui.highlight(name)}'.")
 
 
-@handle_cmd_error(Command.ADD_ADDRESS)
-def add_address(args: list[str], book: ContactBook) -> str:
+def split_address_args(args: list[str]) -> tuple[str, str]:
+    """Return the name and the address made of all the words after it.
+
+    Raises ValueError if no address is given, so the command usage is shown.
+    """
     name, *address_parts = args
     if not address_parts:
         raise ValueError("Address is required")
-    address = " ".join(address_parts)
+    return name, " ".join(address_parts)
+
+
+@handle_cmd_error(Command.ADD_ADDRESS)
+def add_address(args: list[str], book: ContactBook) -> str:
+    name, address = split_address_args(args)
     name = normalize_name(name)
     contact = book.find(name)
     contact.add_address(address)
     return ui.success(f"Address added for '{ui.highlight(name)}'.")
+
+
+@handle_cmd_error(Command.CHANGE_ADDRESS)
+def change_address(args: list[str], book: ContactBook) -> str:
+    name, address = split_address_args(args)
+    name = normalize_name(name)
+    contact = book.find(name)
+    if contact.address is None:
+        raise ValidationError(
+            f"Contact '{name}' has no address yet. Use {Command.ADD_ADDRESS.keyword}"
+        )
+    contact.add_address(address)
+    return ui.success(f"Address changed for '{ui.highlight(name)}'.")
 
 
 @handle_cmd_error(Command.SHOW_BIRTHDAY)
@@ -181,6 +202,7 @@ CONTACT_COMMANDS: dict[Command, Handler[ContactBook]] = {
     Command.ADD_BIRTHDAY: add_birthday,
     Command.ADD_EMAIL: add_email,
     Command.ADD_ADDRESS: add_address,
+    Command.CHANGE_ADDRESS: change_address,
     Command.SHOW_BIRTHDAY: show_birthday,
     Command.SHOW_EMAIL: show_email,
     Command.SHOW_ADDRESS: show_address,

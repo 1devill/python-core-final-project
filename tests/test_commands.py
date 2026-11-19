@@ -125,6 +125,21 @@ class TestContactCommands:
         run("add-address anna Kyiv   Main St 5")
         assert book["Anna"].address.value == "Kyiv Main St 5"
 
+    def test_change_address_replaces_it(self, run, book):
+        run("add anna 0123456789")
+        run("add-address anna Kyiv")
+        assert "Address changed" in run("change-address anna Lviv Market Sq 1")
+        assert book["Anna"].address.value == "Lviv Market Sq 1"
+
+    def test_change_address_needs_an_existing_address(self, run, book):
+        run("add anna 0123456789")
+        assert "add-address" in run("change-address anna Lviv")
+        assert book["Anna"].address is None
+
+    def test_change_address_without_address_shows_usage(self, run):
+        run("add anna 0123456789")
+        assert "Usage: change-address" in run("change-address anna")
+
     def test_contact_without_phones_is_still_shown(self, run):
         run("add anna 0123456789")
         run("remove-phone anna 0123456789")

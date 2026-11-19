@@ -94,7 +94,16 @@ class Email(Field):
 
 
 class Address(RequiredText):
-    """Contact address: free text, must not be empty, stored stripped."""
+    """Contact address: free text, not empty, at most MAX_LENGTH characters, stripped."""
+
+    MAX_LENGTH = 200
+
+    def __init__(self, value: str) -> None:
+        super().__init__(value)
+        if len(self.value) > Address.MAX_LENGTH:
+            raise ValidationError(
+                f"Address must be at most {Address.MAX_LENGTH} characters long"
+            )
 
 
 class Tag(RequiredText):

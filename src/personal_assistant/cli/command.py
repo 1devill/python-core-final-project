@@ -110,6 +110,11 @@ class Command(Enum):
         "change-phone [name] [old phone] [new phone]",
         "Change a contact's phone",
     )
+    CHANGE_ADDRESS = (
+        "change-address",
+        "change-address [name] [new address]",
+        "Replace a contact's address",
+    )
     ALL = ("all", "all", "Show all contacts")
     ALL_NOTES = ("all-notes", "all-notes", "Show all notes")
     SORT_NOTES = (
