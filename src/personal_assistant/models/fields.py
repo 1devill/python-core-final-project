@@ -26,15 +26,23 @@ class RequiredText(Field):
         super().__init__(value.strip())
 
 
-class Name(Field):
-    """Contact name, stored capitalized."""
+class Name(RequiredText):
+    """Contact or note name: must not be empty, stored stripped.
+
+    A name typed all in one case or starting with a small letter is capitalized
+    ("anna", "ANNA" -> "Anna"); a name that already starts with a capital letter
+    and mixes cases keeps it ("McDonald", "Anna-Maria", "O'Neil").
+    """
 
     def __init__(self, value: str) -> None:
-        super().__init__(value.capitalize())
+        super().__init__(value)
+        name = self.value
+        if not name[0].isupper() or name.isupper():
+            self.value = name.capitalize()
 
 
 class Birthday(Field):
-    """Birthday as a DD.MM.YYYY string; the parsed date is kept in bd_date."""
+    """Birthday as a DD.MM.YYYY string, not in the future; the date is kept in bd_date."""
 
     FORMAT = "DD.MM.YYYY"
 
@@ -43,6 +51,8 @@ class Birthday(Field):
             self.bd_date = datetime.strptime(value, DATE_PARSE_FORMAT).date()
         except ValueError:
             raise ValidationError(f"Invalid date format. Use {Birthday.FORMAT}")
+        if self.bd_date > date.today():
+            raise ValidationError("Birthday can't be in the future")
         super().__init__(value)
 
     def next_occurrence(self, today: date) -> date:

@@ -87,9 +87,6 @@ class TestContactCommands:
         assert "Phone added" in run("add ANNA 0987654321")
         assert len(book["Anna"].phones) == 2
 
-    @pytest.mark.xfail(
-        strict=True, reason="BUG: extra words after the phone are ignored"
-    )
     def test_add_rejects_extra_arguments(self, run, book):
         run("add anna 0123456789 0987654321")
         assert len(book) == 0 or len(book["Anna"].phones) == 2

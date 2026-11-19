@@ -23,15 +23,11 @@ class TestName:
     def test_is_normalized(self, raw, expected):
         assert Name(raw).value == expected
 
-    @pytest.mark.xfail(strict=True, reason="BUG: Name has no validation")
     @pytest.mark.parametrize("value", ["", "   "])
     def test_rejects_empty(self, value):
         with pytest.raises(ValidationError):
             Name(value)
 
-    @pytest.mark.xfail(
-        strict=True, reason="BUG: capitalize() lowers the rest of the name"
-    )
     @pytest.mark.parametrize("value", ["McDonald", "Anna-Maria", "O'Neil"])
     def test_keeps_inner_capitals(self, value):
         assert Name(value).value == value
@@ -138,7 +134,6 @@ class TestBirthday:
         with pytest.raises(ValidationError):
             Birthday(value)
 
-    @pytest.mark.xfail(strict=True, reason="BUG: a birthday in the future is accepted")
     def test_rejects_future_date(self):
         with pytest.raises(ValidationError):
             Birthday("01.01.2999")
@@ -183,7 +178,6 @@ class TestText:
         with pytest.raises(ValidationError):
             Text(value)
 
-    @pytest.mark.xfail(strict=True, reason="BUG: Text lowercases what the user wrote")
     def test_keeps_original_case(self):
         assert Text("Call Anna at 5PM").value == "Call Anna at 5PM"
 

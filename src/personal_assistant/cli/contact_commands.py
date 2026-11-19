@@ -1,6 +1,8 @@
 """Contact command handlers and the CONTACT_COMMANDS dict."""
 
+from personal_assistant.exceptions import ContactDoesNotExist
 from personal_assistant.models import Contact, ContactBook
+from personal_assistant.models.fields import Name
 
 from . import ui
 from .command import Command, Handler
@@ -11,20 +13,22 @@ SEARCH_KEYS = ("name", "phone", "email", "address")
 
 
 def normalize_name(name: str) -> str:
-    return name.capitalize()
+    """Return the name the way Name stores it, for messages."""
+    return Name(name).value
 
 
 @handle_cmd_error(Command.ADD)
 def add_contact(args: list[str], book: ContactBook) -> str:
-    name, phone, *_ = args
-    name = normalize_name(name)
-    if name not in book:
+    name, phone = args
+    try:
+        contact = book.find(name)
+    except ContactDoesNotExist:
         contact = Contact(name)
         contact.add_phone(phone)
         book.add_contact(contact)
-        return ui.success(f"Contact '{ui.highlight(name)}' added.")
-    book.find(name).add_phone(phone)
-    return ui.success(f"Phone added to '{ui.highlight(name)}'.")
+        return ui.success(f"Contact '{ui.highlight(contact.name.value)}' added.")
+    contact.add_phone(phone)
+    return ui.success(f"Phone added to '{ui.highlight(contact.name.value)}'.")
 
 
 @handle_cmd_error(Command.CHANGE_PHONE)

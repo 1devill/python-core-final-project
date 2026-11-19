@@ -47,6 +47,14 @@ def good_contact(name: str = "anna") -> bytes:
     return pickle.dumps(Contact(name))
 
 
+BACKUP_NOTICE = "The original file was kept as"
+
+
+def problems(warnings: list[str]) -> list[str]:
+    """Warnings about the data itself, without the note about the backup copy."""
+    return [warning for warning in warnings if not warning.startswith(BACKUP_NOTICE)]
+
+
 def test_round_trip(storage):
     book, notes = filled_books()
     storage.save(book, notes)
@@ -99,20 +107,17 @@ def test_broken_file_gives_a_warning_and_empty_books(storage, path, data):
     write_raw(path, data)
     book, notes, warnings = storage.load()
     assert (len(book), len(notes)) == (0, 0)
-    assert len(warnings) == 1
+    assert len(problems(warnings)) == 1
 
 
-@pytest.mark.xfail(
-    strict=True, reason="BUG: a broken data file is overwritten on load, no backup"
-)
 def test_broken_file_is_not_destroyed(storage, path):
     write_raw(path, b"not a pickle")
-    storage.load()
+    _, _, warnings = storage.load()
+    assert warnings[-1].startswith(BACKUP_NOTICE)
     survivors = [file.read_bytes() for file in path.parent.iterdir()]
     assert b"not a pickle" in survivors
 
 
-@pytest.mark.xfail(strict=True, reason="BUG: a truncated data file gives no warning")
 def test_truncated_file_gives_a_warning(storage, path):
     storage.save(*filled_books())
     path.write_bytes(b"")
@@ -124,7 +129,7 @@ def test_one_bad_record_does_not_lose_the_others(storage, path):
     write_payload(path, contacts=[b"garbage", good_contact("anna"), 123])
     book, _, warnings = storage.load()
     assert list(book) == ["Anna"]
-    assert len(warnings) == 2
+    assert len(problems(warnings)) == 2
 
 
 def test_record_with_invalid_field_is_skipped(storage, path):
@@ -135,21 +140,21 @@ def test_record_with_invalid_field_is_skipped(storage, path):
     write_payload(path, contacts=[pickle.dumps(contact), good_contact("anna")])
     book, _, warnings = storage.load()
     assert list(book) == ["Anna"]
-    assert len(warnings) == 1
+    assert len(problems(warnings)) == 1
 
 
 def test_duplicate_record_is_skipped(storage, path):
     write_payload(path, contacts=[good_contact(), good_contact()])
     book, _, warnings = storage.load()
     assert len(book) == 1
-    assert len(warnings) == 1
+    assert len(problems(warnings)) == 1
 
 
 def test_wrong_class_in_a_list_is_skipped(storage, path):
     write_payload(path, contacts=[pickle.dumps(Note("n", ["t"], "x"))])
     book, _, warnings = storage.load()
     assert len(book) == 0
-    assert len(warnings) == 1
+    assert len(problems(warnings)) == 1
 
 
 @pytest.mark.parametrize(
@@ -186,11 +191,12 @@ def test_code_in_the_file_is_not_executed(storage, path, tmp_path):
     write_raw(path, pickle.dumps(Exploit(marker)))
     _, _, warnings = storage.load()
     assert not marker.exists()
-    assert len(warnings) == 1
+    assert len(problems(warnings)) == 1
 
 
 def test_unwritable_location_gives_a_warning_on_load(tmp_path):
     blocker = tmp_path / "file"
     blocker.write_text("in the way")
     _, _, warnings = Storage(blocker / "data.pkl").load()
-    assert any("Could not write" in warning for warning in warnings)
+    # the file can't be backed up, so it is left alone rather than replaced
+    assert any("Could not back up" in warning for warning in warnings)
