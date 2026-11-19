@@ -106,7 +106,6 @@ class TestAddress:
     def test_keeps_value(self):
         assert Address("Kyiv Main St 5").value == "Kyiv Main St 5"
 
-    @pytest.mark.xfail(strict=True, reason="BUG: Address has no validation")
     @pytest.mark.parametrize("value", ["", "   "])
     def test_rejects_empty(self, value):
         with pytest.raises(ValidationError):

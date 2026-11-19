@@ -8,6 +8,8 @@ from personal_assistant.exceptions import ValidationError
 
 
 class Field:
+    """Base class for all fields: stores a value and prints it as text."""
+
     def __init__(self, value: str) -> None:
         self.value = value
 
@@ -15,12 +17,25 @@ class Field:
         return str(self.value)
 
 
+class RequiredText(Field):
+    """Text field that must not be empty; stored without surrounding spaces."""
+
+    def __init__(self, value: str) -> None:
+        if not value.strip():
+            raise ValidationError(f"{self.__class__.__name__} must not be empty")
+        super().__init__(value.strip())
+
+
 class Name(Field):
+    """Contact name, stored capitalized."""
+
     def __init__(self, value: str) -> None:
         super().__init__(value.capitalize())
 
 
 class Birthday(Field):
+    """Birthday as a DD.MM.YYYY string; the parsed date is kept in bd_date."""
+
     FORMAT = "DD.MM.YYYY"
 
     def __init__(self, value: str) -> None:
@@ -31,6 +46,7 @@ class Birthday(Field):
         super().__init__(value)
 
     def next_occurrence(self, today: date) -> date:
+        """Return the next birthday date on or after today."""
         birthday = self._get_next_birthday_date(self.bd_date, today.year)
         if birthday < today:
             return self._get_next_birthday_date(self.bd_date, today.year + 1)
@@ -45,6 +61,8 @@ class Birthday(Field):
 
 
 class Phone(Field):
+    """Phone number: exactly 10 digits."""
+
     def __init__(self, phone_num: str) -> None:
         if not isinstance(phone_num, str) or not re.fullmatch(r"[0-9]+", phone_num):
             raise ValidationError("Phone number must contain only digits")
@@ -56,6 +74,8 @@ class Phone(Field):
 
 
 class Email(Field):
+    """Email address that matches EMAIL_REGEX."""
+
     def __init__(self, email: str) -> None:
         if not isinstance(email, str) or not re.fullmatch(EMAIL_REGEX, email):
             raise ValidationError("Email format is incorrect")
@@ -63,27 +83,16 @@ class Email(Field):
         super().__init__(email)
 
 
-class Address(Field):
-    pass
+class Address(RequiredText):
+    """Contact address: free text, must not be empty, stored stripped."""
 
 
-class Tag(Field):
-    """
-    note tag: stored in lowercase, must not be empty
-    """
+class Tag(RequiredText):
+    """Note tag: must not be empty, stored stripped and in lowercase."""
 
     def __init__(self, value: str) -> None:
-        if not value or value.strip() == "":
-            raise ValidationError(f"{self.__class__.__name__} must not be empty")
         super().__init__(value.lower())
 
 
-class Text(Field):
-    """
-    note text: must not be empty
-    """
-
-    def __init__(self, value: str) -> None:
-        if not value or value.strip() == "":
-            raise ValidationError(f"{self.__class__.__name__} must not be empty")
-        super().__init__(value)
+class Text(RequiredText):
+    """Note text: must not be empty, stored stripped."""
