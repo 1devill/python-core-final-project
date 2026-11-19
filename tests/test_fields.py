@@ -23,15 +23,11 @@ class TestName:
     def test_is_normalized(self, raw, expected):
         assert Name(raw).value == expected
 
-    @pytest.mark.xfail(strict=True, reason="BUG: Name has no validation")
     @pytest.mark.parametrize("value", ["", "   "])
     def test_rejects_empty(self, value):
         with pytest.raises(ValidationError):
             Name(value)
 
-    @pytest.mark.xfail(
-        strict=True, reason="BUG: capitalize() lowers the rest of the name"
-    )
     @pytest.mark.parametrize("value", ["McDonald", "Anna-Maria", "O'Neil"])
     def test_keeps_inner_capitals(self, value):
         assert Name(value).value == value
@@ -106,11 +102,21 @@ class TestAddress:
     def test_keeps_value(self):
         assert Address("Kyiv Main St 5").value == "Kyiv Main St 5"
 
-    @pytest.mark.xfail(strict=True, reason="BUG: Address has no validation")
     @pytest.mark.parametrize("value", ["", "   "])
     def test_rejects_empty(self, value):
         with pytest.raises(ValidationError):
             Address(value)
+
+    def test_strips_surrounding_spaces(self):
+        assert Address("  Kyiv Main St 5  ").value == "Kyiv Main St 5"
+
+    def test_accepts_max_length(self):
+        value = "a" * Address.MAX_LENGTH
+        assert Address(value).value == value
+
+    def test_rejects_too_long(self):
+        with pytest.raises(ValidationError, match="at most"):
+            Address("a" * (Address.MAX_LENGTH + 1))
 
 
 class TestBirthday:
@@ -139,7 +145,6 @@ class TestBirthday:
         with pytest.raises(ValidationError):
             Birthday(value)
 
-    @pytest.mark.xfail(strict=True, reason="BUG: a birthday in the future is accepted")
     def test_rejects_future_date(self):
         with pytest.raises(ValidationError):
             Birthday("01.01.2999")
@@ -184,7 +189,6 @@ class TestText:
         with pytest.raises(ValidationError):
             Text(value)
 
-    @pytest.mark.xfail(strict=True, reason="BUG: Text lowercases what the user wrote")
     def test_keeps_original_case(self):
         assert Text("Call Anna at 5PM").value == "Call Anna at 5PM"
 

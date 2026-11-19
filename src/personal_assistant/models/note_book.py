@@ -4,12 +4,13 @@ from collections import UserDict
 
 from personal_assistant.exceptions import NoteDoesNotExist, ValidationError
 
+from .fields import Name
 from .note import Note
 
 
 class NoteBook(UserDict):
     """
-    note book: notes stored in self.data by note name (capitalized)
+    note book: notes stored in self.data by note name (normalized by Name)
     """
 
     data: dict[str, Note]
@@ -25,9 +26,14 @@ class NoteBook(UserDict):
         :param note: Note; raises ValidationError if a note with the same name already exists
         """
         name = note.name.value
-        if name in self.data:
+        if self._key(name) is not None:
             raise ValidationError(f"Note '{name}' already exists")
         self.data[name] = note
+
+    def _key(self, name: str) -> str | None:
+        """Return the stored key for a note name typed in any case, or None."""
+        wanted = name.strip().casefold()
+        return next((key for key in self.data if key.casefold() == wanted), None)
 
     def get_note(self, name: str) -> Note:
         """
@@ -35,10 +41,10 @@ class NoteBook(UserDict):
         :param name: note name: str, any case
         :return: Note; raises NoteDoesNotExist if not found
         """
-        name = name.capitalize()
-        if name not in self.data:
-            raise NoteDoesNotExist(name)
-        return self.data[name]
+        key = self._key(name)
+        if key is None:
+            raise NoteDoesNotExist(Name(name).value)
+        return self.data[key]
 
     def search_by_text(self, text: str) -> list[Note]:
         """
@@ -81,7 +87,8 @@ class NoteBook(UserDict):
 
         notes = list(self.data.values())
         if name is not None:
-            notes = [note for note in notes if note.name.value == name.capitalize()]
+            wanted = name.strip().casefold()
+            notes = [note for note in notes if note.name.value.casefold() == wanted]
         if tag is not None:
             notes = [note for note in notes if note.find_by_tag(tag)]
         if text is not None:

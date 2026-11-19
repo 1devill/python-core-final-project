@@ -21,25 +21,34 @@ class ContactBook(UserDict[str, Contact]):
             return "No contacts yet"
         return "\n".join(str(contact) for contact in self.data.values())
 
+    def _key(self, name: str) -> str | None:
+        """Return the stored key for a name typed in any case, or None."""
+        wanted = name.strip().casefold()
+        return next((key for key in self.data if key.casefold() == wanted), None)
+
     def add_contact(self, contact: Contact) -> None:
+        """Add a contact; raises ValidationError if the name is taken in any case."""
         name = contact.name.value
 
-        if name in self.data:
+        if self._key(name) is not None:
             raise ValidationError(f"Contact '{name}' already exists")
 
         self.data[name] = contact
 
     def find(self, name: str) -> Contact:
-        name = Name(name).value
-        if name not in self.data:
-            raise ContactDoesNotExist(name)
-        return self.data[name]
+        """Return the contact with this name in any case; raises ContactDoesNotExist."""
+        key = self._key(name)
+        if key is None:
+            raise ContactDoesNotExist(Name(name).value)
+        return self.data[key]
 
     def delete(self, name: str) -> None:
-        if name not in self.data:
-            raise ContactDoesNotExist(name)
+        """Delete the contact with this name in any case; raises ContactDoesNotExist."""
+        key = self._key(name)
+        if key is None:
+            raise ContactDoesNotExist(Name(name).value)
 
-        del self.data[name]
+        del self.data[key]
 
     def find_upcoming_birthdays(self, days_interval: int) -> list[UpcomingBirthday]:
         today = date.today()

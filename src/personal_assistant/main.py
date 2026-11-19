@@ -118,5 +118,7 @@ def run_loop(book: ContactBook, notes: NoteBook, storage: Storage) -> None:
         if handler is None:
             print(unknown_command(keyword))
             continue
-        print(handler(args, notes if command in NOTE_COMMANDS else book))
+        result = handler(args, notes if command in NOTE_COMMANDS else book)
+        # save before printing, so "done" is never shown for unsaved data
         save_data(storage, book, notes)
+        print(result)
