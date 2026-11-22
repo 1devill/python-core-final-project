@@ -7,7 +7,7 @@ from personal_assistant.models.fields import Name
 from . import ui
 from .command import Command, Handler
 from .decorators import handle_cmd_error
-from .parser import parse_filters
+from .parser import parse_filters, split_address_args
 
 SEARCH_KEYS = ("name", "phone", "email", "address")
 
@@ -87,17 +87,6 @@ def add_email(args: list[str], book: ContactBook) -> str:
     contact = book.find(name)
     contact.add_email(email)
     return ui.success(f"Email added for '{ui.highlight(name)}'.")
-
-
-def split_address_args(args: list[str]) -> tuple[str, str]:
-    """Return the name and the address made of all the words after it.
-
-    Raises ValueError if no address is given, so the command usage is shown.
-    """
-    name, *address_parts = args
-    if not address_parts:
-        raise ValueError("Address is required")
-    return name, " ".join(address_parts)
 
 
 @handle_cmd_error(Command.ADD_ADDRESS)

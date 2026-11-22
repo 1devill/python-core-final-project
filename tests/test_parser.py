@@ -2,7 +2,11 @@
 
 import pytest
 
-from personal_assistant.cli.parser import parse_filters, parse_input
+from personal_assistant.cli.parser import (
+    parse_filters,
+    parse_input,
+    split_address_args,
+)
 from personal_assistant.exceptions import ValidationError
 
 KEYS = ("name", "text")
@@ -53,3 +57,16 @@ def test_no_args_raises_value_error_for_the_usage_hint():
 def test_bad_filters(args):
     with pytest.raises(ValidationError):
         parse_filters(args, KEYS)
+
+
+class TestSplitAddressArgs:
+    def test_joins_all_words_after_the_name(self):
+        assert split_address_args(["anna", "Kyiv", "Main", "St", "5"]) == (
+            "anna",
+            "Kyiv Main St 5",
+        )
+
+    @pytest.mark.parametrize("args", [[], ["anna"]])
+    def test_missing_address_raises_value_error(self, args):
+        with pytest.raises(ValueError):
+            split_address_args(args)
