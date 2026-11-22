@@ -68,6 +68,7 @@ The assistant runs in an interactive loop: type a command, press Enter, and it r
 | `add-birthday [name] [DD.MM.YYYY]`                           | Add a birthday to a contact                     |
 | `add-email [name] [email]`                                   | Add an email to a contact                       |
 | `add-address [name] [address]`                               | Add an address to a contact                     |
+| `change-address [name] [new address]`                        | Replace a contact's address                     |
 | `show-birthday` / `show-email` / `show-address [name]`       | Show a contact's birthday / email / address     |
 | `show-upcoming-birthdays [days]`                             | Show birthdays within the next N days           |
 | `remove [name]`                                              | Remove a contact                                |

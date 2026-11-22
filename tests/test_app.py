@@ -84,7 +84,6 @@ def test_corrupted_file_does_not_stop_the_app(app):
     assert "Anna" in result.stdout
 
 
-@pytest.mark.xfail(strict=True, reason="BUG: a failed save on exit ends in a traceback")
 def test_failed_save_on_exit_does_not_crash(app):
     (app.home / DATA_FOLDER).write_text("a file where the folder should be")
     result = app("add anna 0123456789")
@@ -92,9 +91,6 @@ def test_failed_save_on_exit_does_not_crash(app):
     assert "Traceback" not in result.stderr
 
 
-@pytest.mark.xfail(
-    strict=True, reason="BUG: data is saved only on exit, a killed app loses it"
-)
 @pytest.mark.skipif(sys.platform == "win32", reason="needs POSIX signals")
 def test_killed_app_keeps_finished_commands(app):
     env = {

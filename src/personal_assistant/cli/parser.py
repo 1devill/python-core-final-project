@@ -1,4 +1,4 @@
-"""Parse raw user input into a command name, its arguments and search filters."""
+"""Parse raw user input into a command name, its arguments, search filters and addresses."""
 
 from personal_assistant.exceptions import ValidationError
 
@@ -43,3 +43,14 @@ def parse_filters(args: list[str], allowed_keys: tuple[str, ...]) -> dict[str, s
     if not args:
         raise ValueError("At least one filter is required")
     return {key: " ".join(words) for key, words in filters.items()}
+
+
+def split_address_args(args: list[str]) -> tuple[str, str]:
+    """Return the name and the address made of all the words after it.
+
+    Raises ValueError if no address is given, so the command usage is shown.
+    """
+    name, *address_parts = args
+    if not address_parts:
+        raise ValueError("Address is required")
+    return name, " ".join(address_parts)

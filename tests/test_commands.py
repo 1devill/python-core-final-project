@@ -87,9 +87,6 @@ class TestContactCommands:
         assert "Phone added" in run("add ANNA 0987654321")
         assert len(book["Anna"].phones) == 2
 
-    @pytest.mark.xfail(
-        strict=True, reason="BUG: extra words after the phone are ignored"
-    )
     def test_add_rejects_extra_arguments(self, run, book):
         run("add anna 0123456789 0987654321")
         assert len(book) == 0 or len(book["Anna"].phones) == 2
@@ -127,6 +124,21 @@ class TestContactCommands:
         run("add anna 0123456789")
         run("add-address anna Kyiv   Main St 5")
         assert book["Anna"].address.value == "Kyiv Main St 5"
+
+    def test_change_address_replaces_it(self, run, book):
+        run("add anna 0123456789")
+        run("add-address anna Kyiv")
+        assert "Address changed" in run("change-address anna Lviv Market Sq 1")
+        assert book["Anna"].address.value == "Lviv Market Sq 1"
+
+    def test_change_address_needs_an_existing_address(self, run, book):
+        run("add anna 0123456789")
+        assert "add-address" in run("change-address anna Lviv")
+        assert book["Anna"].address is None
+
+    def test_change_address_without_address_shows_usage(self, run):
+        run("add anna 0123456789")
+        assert "Usage: change-address" in run("change-address anna")
 
     def test_contact_without_phones_is_still_shown(self, run):
         run("add anna 0123456789")

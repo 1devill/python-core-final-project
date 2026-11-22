@@ -1,30 +1,34 @@
 """Contact command handlers and the CONTACT_COMMANDS dict."""
 
+from personal_assistant.exceptions import ContactDoesNotExist, ValidationError
 from personal_assistant.models import Contact, ContactBook
+from personal_assistant.models.fields import Name
 
 from . import ui
 from .command import Command, Handler
 from .decorators import handle_cmd_error
-from .parser import parse_filters
+from .parser import parse_filters, split_address_args
 
 SEARCH_KEYS = ("name", "phone", "email", "address")
 
 
 def normalize_name(name: str) -> str:
-    return name.capitalize()
+    """Return the name the way Name stores it, for messages."""
+    return Name(name).value
 
 
 @handle_cmd_error(Command.ADD)
 def add_contact(args: list[str], book: ContactBook) -> str:
-    name, phone, *_ = args
-    name = normalize_name(name)
-    if name not in book:
+    name, phone = args
+    try:
+        contact = book.find(name)
+    except ContactDoesNotExist:
         contact = Contact(name)
         contact.add_phone(phone)
         book.add_contact(contact)
-        return ui.success(f"Contact '{ui.highlight(name)}' added.")
-    book.find(name).add_phone(phone)
-    return ui.success(f"Phone added to '{ui.highlight(name)}'.")
+        return ui.success(f"Contact '{ui.highlight(contact.name.value)}' added.")
+    contact.add_phone(phone)
+    return ui.success(f"Phone added to '{ui.highlight(contact.name.value)}'.")
 
 
 @handle_cmd_error(Command.CHANGE_PHONE)
@@ -87,14 +91,24 @@ def add_email(args: list[str], book: ContactBook) -> str:
 
 @handle_cmd_error(Command.ADD_ADDRESS)
 def add_address(args: list[str], book: ContactBook) -> str:
-    name, *address_parts = args
-    if not address_parts:
-        raise ValueError("Address is required")
-    address = " ".join(address_parts)
+    name, address = split_address_args(args)
     name = normalize_name(name)
     contact = book.find(name)
     contact.add_address(address)
     return ui.success(f"Address added for '{ui.highlight(name)}'.")
+
+
+@handle_cmd_error(Command.CHANGE_ADDRESS)
+def change_address(args: list[str], book: ContactBook) -> str:
+    name, address = split_address_args(args)
+    name = normalize_name(name)
+    contact = book.find(name)
+    if contact.address is None:
+        raise ValidationError(
+            f"Contact '{name}' has no address yet. Use {Command.ADD_ADDRESS.keyword}"
+        )
+    contact.add_address(address)
+    return ui.success(f"Address changed for '{ui.highlight(name)}'.")
 
 
 @handle_cmd_error(Command.SHOW_BIRTHDAY)
@@ -177,6 +191,7 @@ CONTACT_COMMANDS: dict[Command, Handler[ContactBook]] = {
     Command.ADD_BIRTHDAY: add_birthday,
     Command.ADD_EMAIL: add_email,
     Command.ADD_ADDRESS: add_address,
+    Command.CHANGE_ADDRESS: change_address,
     Command.SHOW_BIRTHDAY: show_birthday,
     Command.SHOW_EMAIL: show_email,
     Command.SHOW_ADDRESS: show_address,

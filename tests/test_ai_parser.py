@@ -163,6 +163,7 @@ class TestPromptAndTool:
         "command",
         [
             Command.CHANGE_PHONE,
+            Command.CHANGE_ADDRESS,
             Command.CHANGE_NOTE_TEXT,
             Command.CHANGE_NOTE_TAG,
             Command.ADD_BIRTHDAY,
