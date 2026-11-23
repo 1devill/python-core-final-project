@@ -112,9 +112,12 @@ class Note:
     def edit_text(self, text: str) -> None:
         """
         replace the text of the note
-        :param text: new text: str; raises ValidationError if it is empty
+        :param text: new text: str; raises ValidationError if it is empty or the same as the current text
         """
-        self.text = Text(text)
+        new = Text(text)
+        if new.value == self.text.value:
+            raise ValidationError("New text is the same as the current one")
+        self.text = new
 
     def remove_tag(self, tag_name: str) -> None:
         """
