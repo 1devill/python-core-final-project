@@ -1,6 +1,7 @@
 """Corner cases of saving and loading the data file."""
 
 import pickle
+import sys
 
 import pytest
 
@@ -209,5 +210,9 @@ def test_unwritable_location_gives_a_warning_on_load(tmp_path):
     blocker = tmp_path / "file"
     blocker.write_text("in the way")
     _, _, warnings = Storage(blocker / "data.pkl").load()
-    # the file can't be backed up, so it is left alone rather than replaced
-    assert any("Could not back up" in warning for warning in warnings)
+    # The data file is never replaced. POSIX reports a path below a regular file as
+    # "not a directory" (the damaged file can't be backed up); Windows reports "not
+    # found", so the app tries to create the file and can't write it.
+    expected = "Could not write" if sys.platform == "win32" else "Could not back up"
+    assert any(expected in warning for warning in warnings)
+    assert blocker.read_text() == "in the way"
