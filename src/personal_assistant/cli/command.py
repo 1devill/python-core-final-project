@@ -113,7 +113,17 @@ class Command(Enum):
     CHANGE_ADDRESS = (
         "change-address",
         "change-address [name] [new address]",
-        "Replace a contact's address",
+        "Change a contact's address",
+    )
+    CHANGE_BIRTHDAY = (
+        "change-birthday",
+        "change-birthday [name] [DD.MM.YYYY]",
+        "Change a contact's birthday",
+    )
+    CHANGE_EMAIL = (
+        "change-email",
+        "change-email [name] [email]",
+        "Change a contact's email",
     )
     ALL = ("all", "all", "Show all contacts")
     ALL_NOTES = ("all-notes", "all-notes", "Show all notes")
