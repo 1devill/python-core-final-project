@@ -155,6 +155,10 @@ class TestPromptAndTool:
         rules = ai_parser._system_prompt().split("Rules:")[1]
         assert "find-contacts" in rules
 
+    def test_every_change_command_needs_confirmation(self):
+        changing = {c for c in Command if c.keyword.startswith("change")}
+        assert changing <= ai_parser.CONFIRM_COMMANDS
+
     def test_every_delete_command_needs_confirmation(self):
         deleting = {c for c in Command if c.keyword.startswith("remove")}
         assert deleting <= ai_parser.CONFIRM_COMMANDS

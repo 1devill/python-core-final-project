@@ -147,6 +147,245 @@ class TestContactCommands:
         assert "Phones: -" in run("all")
 
 
+class TestContactEditRules:
+    """add-* sets a missing value, change-* replaces an existing one.
+
+    Each field is a (name, add line, change line, invalid change, attribute) case.
+    """
+
+    FIELDS = [
+        pytest.param(
+            "email",
+            ("add-email anna a@b.co", "a@b.co"),
+            ("change-email anna new@b.co", "new@b.co"),
+            "change-email anna bad",
+            id="email",
+        ),
+        pytest.param(
+            "birthday",
+            ("add-birthday anna 15.03.1990", "15.03.1990"),
+            ("change-birthday anna 01.02.1991", "01.02.1991"),
+            "change-birthday anna 32.13.2000",
+            id="birthday",
+        ),
+        pytest.param(
+            "address",
+            ("add-address anna Kyiv Main St 5", "Kyiv Main St 5"),
+            ("change-address anna Lviv Market Sq 1", "Lviv Market Sq 1"),
+            "change-address anna " + "x" * 500,
+            id="address",
+        ),
+    ]
+
+    @staticmethod
+    def value(book, field):
+        """Return the stored value of a field as a plain string, or None."""
+        stored = getattr(book["Anna"], field)
+        return None if stored is None else stored.value
+
+    @pytest.mark.parametrize("field, add, change, invalid", FIELDS)
+    def test_add_sets_a_missing_value(self, run, book, field, add, change, invalid):
+        run("add anna 0123456789")
+        assert "added" in run(add[0])
+        assert self.value(book, field) == add[1]
+
+    @pytest.mark.parametrize("field, add, change, invalid", FIELDS)
+    def test_add_again_points_to_change(self, run, book, field, add, change, invalid):
+        run("add anna 0123456789")
+        run(add[0])
+        answer = run(add[0])
+        assert f"change-{field}" in answer
+        assert "added" not in answer
+        assert self.value(book, field) == add[1]
+
+    @pytest.mark.parametrize("field, add, change, invalid", FIELDS)
+    def test_change_replaces_the_value(self, run, book, field, add, change, invalid):
+        run("add anna 0123456789")
+        run(add[0])
+        assert "changed" in run(change[0])
+        assert self.value(book, field) == change[1]
+
+    @pytest.mark.parametrize("field, add, change, invalid", FIELDS)
+    def test_change_needs_an_existing_value(
+        self, run, book, field, add, change, invalid
+    ):
+        run("add anna 0123456789")
+        answer = run(change[0])
+        assert f"add-{field}" in answer
+        assert "changed" not in answer
+        assert self.value(book, field) is None
+
+    @pytest.mark.parametrize("field, add, change, invalid", FIELDS)
+    def test_invalid_change_keeps_the_old_value(
+        self, run, book, field, add, change, invalid
+    ):
+        run("add anna 0123456789")
+        run(add[0])
+        assert "changed" not in run(invalid)
+        assert self.value(book, field) == add[1]
+
+    @pytest.mark.parametrize("field, add, change, invalid", FIELDS)
+    def test_change_missing_contact(self, run, field, add, change, invalid):
+        assert "does not exist" in run(change[0])
+
+    @pytest.mark.parametrize("field", ["email", "birthday"])
+    def test_change_without_value_shows_usage(self, run, field):
+        run("add anna 0123456789")
+        assert f"Usage: change-{field}" in run(f"change-{field} anna")
+
+    @pytest.mark.parametrize("field, add, change, invalid", FIELDS)
+    def test_removed_value_can_be_added_again(
+        self, run, book, field, add, change, invalid
+    ):
+        run("add anna 0123456789")
+        run(add[0])
+        run(f"remove-{field} anna")
+        assert "added" in run(add[0])
+        assert self.value(book, field) == add[1]
+
+    @pytest.mark.parametrize("field, add, change, invalid", FIELDS)
+    def test_change_to_the_same_value_is_refused(
+        self, run, book, field, add, change, invalid
+    ):
+        """Like change-phone with two identical phones: nothing to change."""
+        run("add anna 0123456789")
+        run(add[0])
+        answer = run(f"change-{field} anna {add[1]}")
+        assert "changed" not in answer
+        assert self.value(book, field) == add[1]
+
+    @pytest.mark.parametrize("field, add, change, invalid", FIELDS)
+    def test_name_is_case_insensitive(self, run, book, field, add, change, invalid):
+        run("add anna 0123456789")
+        run(add[0].replace("anna", "ANNA"))
+        assert "changed" in run(change[0].replace("anna", "aNNa"))
+        assert self.value(book, field) == change[1]
+
+    @pytest.mark.parametrize("field, add, change, invalid", FIELDS)
+    def test_failed_commands_do_not_touch_other_fields(
+        self, run, book, field, add, change, invalid
+    ):
+        run("add anna 0123456789")
+        run(add[0])
+        before = str(book["Anna"])
+        run(add[0])
+        run(invalid)
+        assert str(book["Anna"]) == before
+
+
+class TestPhoneEditRules:
+    """Phones follow the same rules: no silent overwrite, no no-op changes."""
+
+    def test_adding_an_existing_phone_is_refused(self, run, book):
+        run("add anna 0123456789")
+        answer = run("add anna 0123456789")
+        assert "already exists" in answer
+        assert len(book["Anna"].phones) == 1
+
+    def test_change_to_the_same_phone_is_refused(self, run, book):
+        run("add anna 0123456789")
+        assert "identical" in run("change-phone anna 0123456789 0123456789")
+
+    def test_change_to_another_existing_phone_is_refused(self, run, book):
+        run("add anna 0123456789")
+        run("add anna 0987654321")
+        assert "already exists" in run("change-phone anna 0123456789 0987654321")
+        assert [p.value for p in book["Anna"].phones] == ["0123456789", "0987654321"]
+
+    def test_invalid_new_phone_keeps_the_old_one(self, run, book):
+        run("add anna 0123456789")
+        assert "changed" not in run("change-phone anna 0123456789 12")
+        assert [p.value for p in book["Anna"].phones] == ["0123456789"]
+
+    def test_removing_a_missing_phone_is_refused(self, run):
+        run("add anna 0123456789")
+        assert "not found" in run("remove-phone anna 0987654321")
+
+
+class TestNoteEditRules:
+    """Notes follow the same rules as contacts."""
+
+    @staticmethod
+    def tags(notes):
+        return [tag.value for tag in notes["Shop"].tags]
+
+    def test_adding_an_existing_note_is_refused(self, run, notes):
+        run("add-note shop home buy milk")
+        assert "already exists" in run("add-note SHOP work other text")
+        assert self.tags(notes) == ["home"]
+
+    def test_adding_an_existing_tag_is_refused(self, run, notes):
+        run("add-note shop home buy milk")
+        answer = run("add-note-tag shop HOME")
+        assert "already exists" in answer or "unique" in answer
+        assert self.tags(notes) == ["home"]
+
+    def test_change_tag_to_an_existing_tag_is_refused(self, run, notes):
+        run("add-note shop home,work buy milk")
+        assert "already exists" in run("change-note-tag shop home work")
+        assert self.tags(notes) == ["home", "work"]
+
+    def test_change_tag_to_the_same_tag_is_refused(self, run, notes):
+        run("add-note shop home buy milk")
+        assert "identical" in run("change-note-tag shop home home")
+
+    def test_change_missing_tag_is_refused(self, run, notes):
+        run("add-note shop home buy milk")
+        assert "not found" in run("change-note-tag shop work office")
+        assert self.tags(notes) == ["home"]
+
+    def test_change_text_to_the_same_text_is_refused(self, run, notes):
+        run("add-note shop home buy milk")
+        assert "changed" not in run("change-note-text shop buy milk")
+
+    def test_change_text_replaces_it(self, run, notes):
+        run("add-note shop home buy milk")
+        assert "changed" in run("change-note-text SHOP buy bread")
+        assert notes["Shop"].text.value == "buy bread"
+
+    @pytest.mark.parametrize(
+        "line",
+        [
+            "change-note-text ghost text",
+            "add-note-tag ghost home",
+            "change-note-tag ghost home work",
+            "remove-note-tag ghost home",
+            "remove-note ghost",
+        ],
+    )
+    def test_missing_note(self, run, line):
+        assert "does not exist" in run(line)
+
+
+class TestCommandFamilies:
+    """Every contact field is managed with the same set of commands."""
+
+    @pytest.mark.parametrize("field", ["email", "birthday", "address"])
+    @pytest.mark.parametrize("verb", ["add", "change", "remove", "show"])
+    def test_field_has_every_command(self, field, verb):
+        assert Command.parse(f"{verb}-{field}") is not None
+
+    @pytest.mark.parametrize(
+        "keyword", ["add", "change-phone", "remove-phone", "phone"]
+    )
+    def test_phone_has_every_command(self, keyword):
+        assert Command.parse(keyword) is not None
+
+    @pytest.mark.parametrize("verb", ["add", "change", "remove"])
+    def test_note_tag_has_every_command(self, verb):
+        assert Command.parse(f"{verb}-note-tag") is not None
+
+    def test_every_change_command_names_the_matching_add_command(self, run):
+        """change-X on an empty field points the user to add-X."""
+        run("add anna 0123456789")
+        for field, value in [
+            ("email", "a@b.co"),
+            ("birthday", "15.03.1990"),
+            ("address", "Kyiv"),
+        ]:
+            assert f"add-{field}" in run(f"change-{field} anna {value}")
+
+
 class TestUpcomingBirthdaysCommand:
     @pytest.mark.parametrize(
         "line",
