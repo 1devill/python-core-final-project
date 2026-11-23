@@ -6,7 +6,7 @@ from personal_assistant.models.fields import Name
 
 from . import ui
 from .command import Command, Handler
-from .decorators import handle_cmd_error
+from .decorators import handle_cmd_error, require_no_args
 from .parser import parse_filters, split_address_args
 
 SEARCH_KEYS = ("name", "phone", "email", "address")
@@ -23,10 +23,12 @@ def add_contact(args: list[str], book: ContactBook) -> str:
     try:
         contact = book.find(name)
     except ContactDoesNotExist:
+        book.check_phone_is_free(phone)
         contact = Contact(name)
         contact.add_phone(phone)
         book.add_contact(contact)
         return ui.success(f"Contact '{ui.highlight(contact.name.value)}' added.")
+    book.check_phone_is_free(phone, contact)
     contact.add_phone(phone)
     return ui.success(f"Phone added to '{ui.highlight(contact.name.value)}'.")
 
@@ -36,6 +38,7 @@ def update_contact_phone(args: list[str], book: ContactBook) -> str:
     name, old_phone, new_phone = args
     name = normalize_name(name)
     contact = book.find(name)
+    book.check_phone_is_free(new_phone, contact)
     contact.edit_phone(old_phone, new_phone)
     return ui.success(f"Phone changed for '{ui.highlight(name)}'.")
 
@@ -67,7 +70,9 @@ def get_phones(args: list[str], book: ContactBook) -> str:
     return ui.field("Phones", ", ".join(str(phone) for phone in contact.phones))
 
 
+@handle_cmd_error(Command.ALL)
 def show_all(args: list[str], book: ContactBook) -> str:
+    require_no_args(Command.ALL, args)
     return ui.contact_list(book.values())
 
 

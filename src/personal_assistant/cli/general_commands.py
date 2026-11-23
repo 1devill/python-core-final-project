@@ -4,10 +4,13 @@ from personal_assistant.models import ContactBook, NoteBook
 
 from . import ui
 from .command import Command, Handler
+from .decorators import handle_cmd_error, require_no_args
 
 
-def hello(_: list[str], __: ContactBook | NoteBook) -> str:
-    """Return a greeting message."""
+@handle_cmd_error(Command.HELLO)
+def hello(args: list[str], _: ContactBook | NoteBook) -> str:
+    """Return a greeting message; extra arguments are refused (ValidationError)."""
+    require_no_args(Command.HELLO, args)
     return ui.greeting()
 
 

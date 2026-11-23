@@ -386,6 +386,68 @@ class TestCommandFamilies:
             assert f"add-{field}" in run(f"change-{field} anna {value}")
 
 
+class TestNoExtraArguments:
+    @pytest.mark.parametrize("line", ["hello there", "all now", "all-notes now"])
+    def test_commands_without_arguments_show_usage(self, run, line):
+        keyword = line.split()[0]
+        answer = run(line)
+        assert f"{keyword} takes no arguments" in answer
+        assert f"Usage: {keyword}" in answer
+
+    @pytest.mark.parametrize("line", ["all", "all-notes", "hello"])
+    def test_still_work_without_arguments(self, run, line):
+        assert "Usage" not in run(line)
+
+
+class TestUniquePhones:
+    def test_new_contact_cannot_take_a_used_phone(self, run, book):
+        run("add anna 0123456789")
+        answer = run("add bob 0123456789")
+        assert "already belongs to 'Anna'" in answer
+        assert "Bob" not in book
+
+    def test_existing_contact_cannot_get_a_used_phone(self, run, book):
+        run("add anna 0123456789")
+        run("add bob 0987654321")
+        assert "already belongs to 'Anna'" in run("add bob 0123456789")
+        assert [p.value for p in book["Bob"].phones] == ["0987654321"]
+
+    def test_change_phone_to_a_used_phone_is_refused(self, run, book):
+        run("add anna 0123456789")
+        run("add bob 0987654321")
+        assert "already belongs to 'Anna'" in run(
+            "change-phone bob 0987654321 0123456789"
+        )
+        assert [p.value for p in book["Bob"].phones] == ["0987654321"]
+
+    def test_own_repeated_phone_keeps_its_own_message(self, run):
+        run("add anna 0123456789")
+        answer = run("add anna 0123456789")
+        assert "already exists" in answer
+        assert "belongs" not in answer
+
+    def test_phone_is_free_after_removal(self, run):
+        run("add anna 0123456789")
+        run("remove anna")
+        assert "added" in run("add bob 0123456789")
+
+    def test_invalid_phone_is_still_reported_as_invalid(self, run):
+        run("add anna 0123456789")
+        assert "10 digits" in run("add bob 12345")
+
+
+class TestEmailCase:
+    def test_email_is_stored_in_lowercase(self, run, book):
+        run("add anna 0123456789")
+        run("add-email anna A@B.CO")
+        assert book["Anna"].email.value == "a@b.co"
+
+    def test_change_to_the_same_email_in_another_case_is_refused(self, run, book):
+        run("add anna 0123456789")
+        run("add-email anna a@b.co")
+        assert "changed" not in run("change-email anna A@B.CO")
+
+
 class TestUpcomingBirthdaysCommand:
     @pytest.mark.parametrize(
         "line",

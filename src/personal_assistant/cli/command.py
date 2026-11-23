@@ -196,6 +196,13 @@ class Command(Enum):
                 return command
         return None
 
+    @property
+    def group(self) -> str:
+        """Section of the help: General, Notes or Contacts."""
+        if self.keyword in ("hello", "help", "exit"):
+            return "General"
+        return "Notes" if "note" in self.keyword else "Contacts"
+
     @classmethod
     def parse(cls, keyword: str) -> "Command | None":
         """Return the command for a keyword or alias, or None if unknown."""

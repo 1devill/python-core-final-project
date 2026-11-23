@@ -84,13 +84,13 @@ class Phone(Field):
 
 
 class Email(Field):
-    """Email address that matches EMAIL_REGEX."""
+    """Email address that matches EMAIL_REGEX; stored in lowercase."""
 
     def __init__(self, email: str) -> None:
         if not isinstance(email, str) or not re.fullmatch(EMAIL_REGEX, email):
             raise ValidationError("Email format is incorrect")
 
-        super().__init__(email)
+        super().__init__(email.lower())
 
 
 class Address(RequiredText):

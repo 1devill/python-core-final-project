@@ -149,3 +149,25 @@ class TestSearch:
     def test_filters_are_keyword_only(self, book):
         with pytest.raises(TypeError):
             book.search_contacts("anna")
+
+
+class TestPhoneOwner:
+    def test_find_by_phone(self, book, make_contact):
+        anna = make_contact("anna", phones=["0123456789", "0987654321"])
+        assert book.find_by_phone("0987654321") is anna
+        assert book.find_by_phone("0555555555") is None
+
+    def test_phone_of_another_contact_is_not_free(self, book, make_contact):
+        make_contact("anna", phones=["0123456789"])
+        bob = make_contact("bob")
+        with pytest.raises(ValidationError, match="Anna"):
+            book.check_phone_is_free("0123456789", bob)
+
+    def test_own_phone_is_skipped(self, book, make_contact):
+        anna = make_contact("anna", phones=["0123456789"])
+        book.check_phone_is_free("0123456789", anna)
+
+    def test_loading_old_data_with_a_shared_phone_still_works(self, book, make_contact):
+        make_contact("anna", phones=["0123456789"])
+        make_contact("bob", phones=["0123456789"])
+        assert len(book) == 2

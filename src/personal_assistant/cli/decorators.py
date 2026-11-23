@@ -2,10 +2,18 @@
 
 from functools import wraps
 
-from personal_assistant.exceptions import AssistantError
+from personal_assistant.exceptions import AssistantError, ValidationError
 
 from . import ui
 from .command import Command
+
+
+def require_no_args(command: Command, args: list[str]) -> None:
+    """Raise ValidationError, naming the usage, if a command without arguments got some."""
+    if args:
+        raise ValidationError(
+            f"{command.keyword} takes no arguments. Usage: {command.usage}"
+        )
 
 
 def handle_cmd_error(command: Command):

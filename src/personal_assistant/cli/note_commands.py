@@ -5,7 +5,7 @@ from personal_assistant.models import Note, NoteBook
 
 from . import ui
 from .command import Command, Handler
-from .decorators import handle_cmd_error
+from .decorators import handle_cmd_error, require_no_args
 from .parser import parse_filters
 
 SEARCH_KEYS = ("name", "tag", "text")
@@ -139,13 +139,15 @@ def change_note_text(args: list[str], book: NoteBook) -> str:
     return ui.success(f"Text changed for '{ui.highlight(note.name)}'.")
 
 
+@handle_cmd_error(Command.ALL_NOTES)
 def show_all_notes(args: list[str], book: NoteBook) -> str:
     """
     command `all-notes`: show all notes of the book
-    :param args: command args (not used)
+    :param args: command args: list[str]; must be empty, otherwise ValidationError
     :param book: NoteBook
     :return: note cards, or a message if there are none
     """
+    require_no_args(Command.ALL_NOTES, args)
     return ui.note_list(book.values())
 
 
