@@ -3,14 +3,12 @@
 A command-line personal assistant for managing contacts and notes.
 Team project for the Neoversity course _Python Programming: Foundations and Best Practices_.
 
-> **Status:** in development. Commands and installation steps below describe the planned interface and will be updated as features land.
-
 ## Features
 
 ### Contacts
 
 - Add contacts with name, address, phone numbers, email and birthday
-- Validate phone numbers and emails on create/edit
+- Validate phones, emails, birthdays and addresses on create/edit (see [Validation rules](#validation-rules))
 - Search contacts (by name and other fields)
 - Edit and delete contacts
 - Show contacts with a birthday within the next N days
@@ -24,10 +22,14 @@ Team project for the Neoversity course _Python Programming: Foundations and Best
 
 - All data is saved to the user's home folder (`~/.personal_assistant/`)
 - Data persists between restarts
+- Optional: understand free-form requests with the [AI parser](#ai-parser)
+
+See [Data storage](#data-storage) for how saving and recovery work.
 
 ## Requirements
 
 - Python 3.10+
+- [colorama](https://pypi.org/project/colorama/) (installed automatically with the package)
 
 ## Installation
 
@@ -57,6 +59,11 @@ python -m personal_assistant
 
 The assistant runs in an interactive loop: type a command, press Enter, and it responds until you exit.
 
+- Words in `[square brackets]` below are placeholders: type the value without the brackets.
+- Commands are not case-sensitive (`ADD` works like `add`).
+- If you mistype a command, the assistant suggests the closest one (`Did you mean 'add'?`).
+- `Ctrl+C` or `Ctrl+D` at the prompt also saves your data and exits.
+
 | Command                                                      | Description                                     |
 | ------------------------------------------------------------ | ----------------------------------------------- |
 | `hello`                                                      | Greeting                                        |
@@ -72,7 +79,7 @@ The assistant runs in an interactive loop: type a command, press Enter, and it r
 | `change-email [name] [email]`                                | Change a contact's email                        |
 | `change-address [name] [new address]`                        | Change a contact's address                      |
 | `show-birthday` / `show-email` / `show-address [name]`       | Show a contact's birthday / email / address     |
-| `show-upcoming-birthdays [days]`                             | Show birthdays within the next N days           |
+| `show-upcoming-birthdays [days]`                             | Show birthdays within the next N days (N ≥ 0)   |
 | `remove [name]`                                              | Remove a contact                                |
 | `remove-phone [name] [phone]`                                | Remove a contact's phone                        |
 | `remove-birthday` / `remove-email` / `remove-address [name]` | Remove a contact's birthday / email / address   |
@@ -107,90 +114,32 @@ All contact and note commands follow the same rules:
 Words without `=` belong to the previous filter, so text may contain spaces.
 Empty filters (`text=`) are rejected; nothing found (by any filter, name included) prints `No notes found.`
 
-## Project structure
+### Validation rules
 
-The project uses the `src/` layout. Some modules below are planned and will be added as features are implemented.
+| Value    | Rule                                                                              |
+| -------- | --------------------------------------------------------------------------------- |
+| Name     | One word, not empty. Case-insensitive and stored capitalized (`anna` → `Anna`); a name with its own capitals (`McDonald`) is kept. Contact names are unique, and so are note names |
+| Phone    | Exactly 10 digits, nothing else                                                   |
+| Email    | A valid address such as `name@example.com`; stored in lowercase                   |
+| Birthday | `DD.MM.YYYY`, not in the future                                                   |
+| Address  | Free text, not empty, at most 200 characters                                      |
+| Tag      | Not empty, stored in lowercase; tags of one note must be unique                   |
+| Text     | Note text, not empty                                                              |
 
-```
-python-core-final-project/
-├── pyproject.toml                 # package metadata, `assistant` console command
-├── README.md
-└── src/
-    └── personal_assistant/
-        ├── __init__.py
-        ├── __main__.py            # enables `python -m personal_assistant`
-        ├── main.py                # main loop: load data → read input → dispatch → save after each command
-        ├── exceptions.py          # custom exceptions (AssistantError, ValidationError, ...)
-        ├── constants.py           # shared constants (date format, email regex)
-        │
-        ├── models/                # domain classes — no input()/print() here
-        │   ├── fields.py          # Field base class + Name, Phone, Email, Address, Birthday
-        │   ├── contact.py         # Contact: one person, composed of fields
-        │   ├── contact_book.py    # ContactBook: add, find, delete contacts
-        │   ├── note.py            # Note: text + tags
-        │   └── note_book.py       # NoteBook: add, find, delete, search/sort by tags
-        │
-        ├── storage/
-        │   └── storage.py         # Storage class: save/load data in ~/.personal_assistant/
-        │
-        └── cli/                   # everything related to user interaction
-            ├── parser.py          # splits user input into command + arguments, parses search filters
-            ├── command.py         # Command enum: keyword, usage, description, aliases
-            ├── ui.py              # colors, banner, help table, message formatting
-            ├── decorators.py      # handle_cmd_error: turns exceptions into user messages
-            ├── general_commands.py  # hello
-            ├── contact_commands.py  # contact command handlers + CONTACT_COMMANDS dict
-            ├── note_commands.py     # note command handlers + NOTE_COMMANDS dict
-            └── registry.py        # merges all handler dicts into one COMMANDS dict
-```
+Because a name is one word, a name with a space such as `Anna Maria` is not supported:
+`add Anna Maria 0501234567` has too many arguments and shows the usage. Use `Anna-Maria` instead.
 
-### How the layers work together
+### Data storage
 
-```
-user input → main.py → parser → registry (COMMANDS) → handler in cli/ → models/ → result string → main.py prints it
-```
-
-- **`models/`** holds the data and business logic. Classes validate their own values and **raise exceptions** on invalid input. They never print or ask for input.
-- **`cli/`** connects the user to the models. Handlers take parsed arguments, call model methods and **return a string**. They don't print.
-- **`storage/`** is the only place that reads or writes files.
-- **`main.py`** only runs the loop. It parses the keyword into a `Command`, handles `help` and `exit` itself, and looks up every other command's handler in `COMMANDS`.
-
-### Adding a new command
-
-1. Add a member to the `Command` enum in `cli/command.py`: `NAME = ("keyword", "usage", "description")` (optionally a tuple of aliases as the 4th item). It shows up in `help` automatically.
-2. Write a handler in the matching module (`contact_commands.py` or `note_commands.py`). It takes `(args, book)` and returns a string.
-3. Wrap it with `@handle_cmd_error(Command.NAME)` — validation errors are shown to the user, wrong arguments print the usage.
-4. Add `Command.NAME: handler` to that module's commands dict.
-5. Add it to the **Usage** table in this README.
-
-You don't need to change `main.py` to add a command.
-
-## Contributing
-
-1. Create a branch from `main`: `git switch -c feature/<short-name>`
-2. Follow PEP 8 and add docstrings to classes and public methods
-3. Run the [checks](#checks-before-a-pull-request) and fix what they report
-4. Open a pull request into `main` and request a review from a teammate
-
-### Development setup
-
-Install the project with the development tools, inside the virtual environment:
-
-```bash
-pip install -e ".[dev]"
-```
-
-Run the same command again after `pyproject.toml` changes. To work on the AI parser too, see
-[AI parser](#ai-parser).
-
-| Tool                                           | Purpose                                  |
-| ---------------------------------------------- | ---------------------------------------- |
-| [Black](https://black.readthedocs.io)          | Code formatting                          |
-| [Ruff](https://docs.astral.sh/ruff/)           | Linting and import sorting               |
-| [mypy](https://mypy.readthedocs.io)            | Type checking                            |
-| [pytest](https://docs.pytest.org)              | Tests                                    |
-
-All tools are configured in `pyproject.toml`. Black is the only formatter: do not use `ruff format`.
+- Data is stored in `~/.personal_assistant/data.pkl`. It is created on the first start.
+- It is saved after every command, not only on exit, so a crash loses nothing that was confirmed.
+- If the data can't be saved, the assistant shows an error saying that recent changes are not on disk.
+- Every record is validated again on load. An invalid contact or note is skipped with a warning; the
+  rest of your data still loads.
+- A damaged, empty or unreadable file is never overwritten. It is first renamed to `data.pkl.bak`
+  (then `.bak1`, `.bak2`, ...) and the assistant starts with what it could read.
+- The file is a pickle and only the assistant's own classes can be loaded from it. Do not edit it by
+  hand and do not load files from other people.
 
 ### AI parser
 
@@ -201,8 +150,10 @@ works as usual.
 1. Install the extra packages:
 
    ```bash
-   pip install -e ".[dev,ai]"
+   pip install -e ".[ai]"
    ```
+
+   Developers install `".[dev,ai]"` instead.
 
 2. Create your local settings file in the project root:
 
@@ -259,6 +210,99 @@ Good to know:
 
 Tests never call the API, so they need no key. Tests that use the real SDK are skipped without the
 `ai` extra.
+
+## Project structure
+
+The project uses the `src/` layout.
+
+```
+python-core-final-project/
+├── pyproject.toml                 # package metadata, tool settings, `assistant` console command
+├── README.md
+├── .env.example                   # template for the optional AI parser settings
+├── .github/workflows/ci.yml       # GitHub Actions checks
+├── tests/                         # pytest tests (never call the real API)
+└── src/
+    └── personal_assistant/
+        ├── __init__.py
+        ├── __main__.py            # enables `python -m personal_assistant`
+        ├── main.py                # main loop: load data → read input → dispatch → save after each command
+        ├── exceptions.py          # custom exceptions (AssistantError, ValidationError, ...)
+        ├── constants.py           # shared constants (date format, email regex)
+        │
+        ├── models/                # domain classes — no input()/print() here
+        │   ├── __init__.py
+        │   ├── fields.py          # Field base class + Name, Phone, Email, Address, Birthday, Tag, Text
+        │   ├── contact.py         # Contact: one person, composed of fields
+        │   ├── contact_book.py    # ContactBook: add, find, delete contacts
+        │   ├── note.py            # Note: text + tags
+        │   └── note_book.py       # NoteBook: add, find, delete, search/sort by tags
+        │
+        ├── storage/
+        │   ├── __init__.py
+        │   └── storage.py         # Storage class: save/load data in ~/.personal_assistant/
+        │
+        └── cli/                   # everything related to user interaction
+            ├── __init__.py
+            ├── parser.py          # splits user input into command + arguments, parses search filters
+            ├── ai_parser.py       # optional: turns free-form input into a command with Claude
+            ├── command.py         # Command enum: keyword, usage, description, aliases
+            ├── ui.py              # colors, banner, help table, message formatting
+            ├── decorators.py      # handle_cmd_error: turns exceptions into user messages
+            ├── general_commands.py  # hello
+            ├── contact_commands.py  # contact command handlers + CONTACT_COMMANDS dict
+            ├── note_commands.py     # note command handlers + NOTE_COMMANDS dict
+            └── registry.py        # merges all handler dicts into one COMMANDS dict
+```
+
+### How the layers work together
+
+```
+user input → main.py → parser → registry (COMMANDS) → handler in cli/ → models/ → result string → main.py prints it
+                            └─ unknown command? → ai_parser (optional) → confirm if it changes data → registry
+```
+
+- **`models/`** holds the data and business logic. Classes validate their own values and **raise exceptions** on invalid input. They never print or ask for input.
+- **`cli/`** connects the user to the models. Handlers take parsed arguments, call model methods and **return a string**. They don't print.
+- **`storage/`** is the only place that reads or writes files.
+- **`main.py`** only runs the loop. It parses the keyword into a `Command`, handles `help` and `exit` itself, and looks up every other command's handler in `COMMANDS`. If the keyword is not a known command and the [AI parser](#ai-parser) is enabled, it asks `ai_parser` which command was meant; the normal handlers and validators still run afterwards.
+
+### Adding a new command
+
+1. Add a member to the `Command` enum in `cli/command.py`: `NAME = ("keyword", "usage", "description")` (optionally a tuple of aliases as the 4th item). It shows up in `help` automatically.
+2. Write a handler in the matching module (`contact_commands.py` or `note_commands.py`). It takes `(args, book)` and returns a string.
+3. Wrap it with `@handle_cmd_error(Command.NAME)` — validation errors are shown to the user, wrong arguments print the usage.
+4. Add `Command.NAME: handler` to that module's commands dict.
+5. Add it to the **Usage** table in this README.
+
+You don't need to change `main.py` to add a command.
+
+## Contributing
+
+1. Create a branch from `main`: `git switch -c feature/<short-name>`
+2. Follow PEP 8 and add docstrings to classes and public methods
+3. Run the [checks](#checks-before-a-pull-request) and fix what they report
+4. Open a pull request into `main` and request a review from a teammate
+
+### Development setup
+
+Install the project with the development tools, inside the virtual environment:
+
+```bash
+pip install -e ".[dev]"
+```
+
+Run the same command again after `pyproject.toml` changes. To work on the AI parser too, install
+`".[dev,ai]"` and see [AI parser](#ai-parser).
+
+| Tool                                           | Purpose                                  |
+| ---------------------------------------------- | ---------------------------------------- |
+| [Black](https://black.readthedocs.io)          | Code formatting                          |
+| [Ruff](https://docs.astral.sh/ruff/)           | Linting and import sorting               |
+| [mypy](https://mypy.readthedocs.io)            | Type checking                            |
+| [pytest](https://docs.pytest.org)              | Tests                                    |
+
+All tools are configured in `pyproject.toml`. Black is the only formatter: do not use `ruff format`.
 
 ### Checks before a pull request
 

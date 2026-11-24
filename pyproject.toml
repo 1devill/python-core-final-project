@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 authors = [
     { name = "Daniil Derbas" },
-    { name = "Leonid" },
+    { name = "Leonid Tsarov" },
     { name = "Andrii Koptiev" }
 ]
 dependencies = ["colorama>=0.4.6"]
