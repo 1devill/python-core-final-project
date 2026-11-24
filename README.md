@@ -65,10 +65,12 @@ The assistant runs in an interactive loop: type a command, press Enter, and it r
 | `phone [name]`                                               | Show a contact's phones                         |
 | `all`                                                        | Show all contacts                               |
 | `find-contacts [name=..] [phone=..] [email=..] [address=..]` | Find contacts matching all given filters        |
-| `add-birthday [name] [DD.MM.YYYY]`                           | Add a birthday to a contact                     |
-| `add-email [name] [email]`                                   | Add an email to a contact                       |
-| `add-address [name] [address]`                               | Add an address to a contact                     |
-| `change-address [name] [new address]`                        | Replace a contact's address                     |
+| `add-birthday [name] [DD.MM.YYYY]`                           | Add a birthday (fails if one is set)            |
+| `add-email [name] [email]`                                   | Add an email (fails if one is set)              |
+| `add-address [name] [address]`                               | Add an address (fails if one is set)            |
+| `change-birthday [name] [DD.MM.YYYY]`                        | Change a contact's birthday                     |
+| `change-email [name] [email]`                                | Change a contact's email                        |
+| `change-address [name] [new address]`                        | Change a contact's address                      |
 | `show-birthday` / `show-email` / `show-address [name]`       | Show a contact's birthday / email / address     |
 | `show-upcoming-birthdays [days]`                             | Show birthdays within the next N days           |
 | `remove [name]`                                              | Remove a contact                                |
@@ -78,13 +80,24 @@ The assistant runs in an interactive loop: type a command, press Enter, and it r
 | `all-notes`                                                  | Show all notes                                  |
 | `find-notes [name=..] [tag=..] [text=..]`                    | Find notes matching all given filters           |
 | `sort-notes [tag]`                                           | Show all notes, the ones with `[tag]` first     |
-| `change-note-text [name] [text]`                             | Replace a note's text                           |
+| `change-note-text [name] [text]`                             | Change a note's text                            |
 | `add-note-tag [name] [tag1,tag2]`                            | Add a tag to a note                             |
 | `change-note-tag [name] [old tag] [new tag]`                 | Replace a note's tag                            |
 | `remove-note-tag [name] [tag]`                               | Remove a tag (the last one can't be removed)    |
 | `remove-note [name]`                                         | Remove a note                                   |
-| `help`                                                       | Show all commands                               |
+| `help`                                                       | Show all commands, grouped by area              |
 | `exit` / `close` / `bye` / `quit`                            | Save data and exit                              |
+
+### Editing rules
+
+All contact and note commands follow the same rules:
+
+- `add-birthday`, `add-email` and `add-address` **set a missing value**. If the contact already has one, the command is refused and points to the matching `change-*` command.
+- `change-phone`, `change-birthday`, `change-email`, `change-address`, `change-note-text` and `change-note-tag` **replace an existing value**. They are refused if there is nothing to change (use `add-*`) or if the new value is the same as the old one.
+- A refused or invalid command never changes the data.
+- A phone number can belong to only one contact. `add` and `change-phone` refuse a number that another contact already has.
+- Emails are stored in lowercase, so `Anna@Example.com` and `anna@example.com` are the same email.
+- Commands that take no arguments (`hello`, `all`, `all-notes`, `help`, `exit`) refuse extra words and show their usage, e.g. `help takes no arguments. Usage: help`.
 
 `find-contacts` matches part of a value, in any case, and a phone matches if any of the contact's phones contains it:
 `find-contacts name=an address=Kyiv Main St` shows contacts matching both filters.
@@ -220,7 +233,7 @@ works as usual.
    ```
 
    The assistant prints `Interpreted as: ...` and runs the command. Commands that delete or
-   overwrite data (`remove-*`, `change-*`, `add-birthday`, `add-email`, `add-address`) ask for
+   change data (`remove-*`, `change-*`, `add-birthday`, `add-email`, `add-address`) ask for
    confirmation first.
 
 | Setting                | Purpose                                                                  |
@@ -255,6 +268,17 @@ ruff check --fix .   # lint and sort imports
 mypy src tests       # check types
 pytest               # run the tests
 ```
+
+The same checks run in GitHub Actions ([ci.yml](.github/workflows/ci.yml)) on every pull request and
+every push to `main`:
+
+| Job                      | What it does                                                                  |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| Format, lint and types   | `black --check .`, `ruff check .` and `mypy src tests` (Python 3.15)          |
+| Tests                    | `pytest` with coverage on Python 3.10 and 3.15 (Ubuntu) and Python 3.15 (Windows) |
+| Install as a user        | `pip install .` in a clean virtual environment, then runs `assistant` from another folder and checks that data survives a restart |
+
+A pull request should be merged only when all jobs are green.
 
 Tests marked `xfail` are known bugs. When you fix one, its test fails with `XPASS(strict)`:
 remove its `@pytest.mark.xfail` line.

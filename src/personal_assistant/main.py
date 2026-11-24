@@ -12,7 +12,8 @@ from personal_assistant.cli import (
     parse_input,
     ui,
 )
-from personal_assistant.exceptions import AIParserError
+from personal_assistant.cli.parser import require_no_args
+from personal_assistant.exceptions import AIParserError, ValidationError
 from personal_assistant.models import ContactBook, NoteBook
 from personal_assistant.storage import Storage
 
@@ -108,6 +109,12 @@ def run_loop(book: ContactBook, notes: NoteBook, storage: Storage) -> None:
             if resolved is None:
                 continue
             command, args = resolved
+        if command in (Command.EXIT, Command.HELP):
+            try:
+                require_no_args(command, args)
+            except ValidationError as error:
+                print(ui.error(str(error)))
+                continue
         if command is Command.EXIT:
             break
         if command is Command.HELP:

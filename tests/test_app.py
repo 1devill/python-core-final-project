@@ -67,6 +67,20 @@ def test_help_lists_new_commands(app):
     assert "show-upcoming-birthdays" in result.stdout
 
 
+def test_help_is_grouped(app):
+    out = app("help").stdout
+    assert out.index("Contacts") < out.index("Notes") < out.index("General")
+    assert out.index("add-note [name]") > out.index("Notes")
+    assert out.index("exit | close") > out.index("General")
+
+
+@pytest.mark.parametrize("line", ["help me", "exit now"])
+def test_help_and_exit_reject_extra_arguments(app, line):
+    result = app(line)
+    keyword = line.split()[0]
+    assert f"{keyword} takes no arguments. Usage: {keyword}" in result.stdout
+
+
 def test_non_ascii_data(app):
     app("add Олена 0123456789", "add-address Олена Київ, Хрещатик 1")
     result = app("find-contacts address=КИЇВ")

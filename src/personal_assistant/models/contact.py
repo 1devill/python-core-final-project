@@ -69,13 +69,43 @@ class Contact:
         self.phones.append(phone)
 
     def add_birthday(self, birthday: str) -> None:
+        if self.birthday is not None:
+            raise ValidationError("Birthday is already set")
         self.birthday = Birthday(birthday)
 
+    def change_birthday(self, new_birthday: str) -> None:
+        if self.birthday is None:
+            raise ValidationError("Birthday is not set yet")
+        new = Birthday(new_birthday)
+        if self.birthday.value == new.value:
+            raise ValidationError("New birthday is the same as the current one")
+        self.birthday = new
+
     def add_email(self, email: str) -> None:
+        if self.email is not None:
+            raise ValidationError("Email is already set")
         self.email = Email(email)
 
+    def change_email(self, new_email: str) -> None:
+        if self.email is None:
+            raise ValidationError("Email is not set yet")
+        new = Email(new_email)
+        if self.email.value == new.value:
+            raise ValidationError("New email is the same as the current one")
+        self.email = new
+
     def add_address(self, address: str) -> None:
+        if self.address is not None:
+            raise ValidationError("Address is already set")
         self.address = Address(address)
+
+    def change_address(self, new_address: str) -> None:
+        if self.address is None:
+            raise ValidationError("Address is not set yet")
+        new = Address(new_address)
+        if self.address.value == new.value:
+            raise ValidationError("New address is the same as the current one")
+        self.address = new
 
     def find_phone(self, phone_num: str) -> Phone | None:
         return next((phone for phone in self.phones if phone.value == phone_num), None)

@@ -68,7 +68,10 @@ class TestEmail:
         ["a@b.co", "first.last@example.com", "a+tag@sub.example.org", "A_B-1%@x-y.io"],
     )
     def test_accepts_valid(self, value):
-        assert Email(value).value == value
+        assert Email(value).value == value.lower()
+
+    def test_is_stored_in_lowercase(self):
+        assert Email("Anna@Example.COM").value == "anna@example.com"
 
     @pytest.mark.parametrize(
         "value",

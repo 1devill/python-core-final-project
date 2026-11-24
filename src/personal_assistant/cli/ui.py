@@ -38,16 +38,20 @@ def prompt() -> str:
 
 
 def help_table(commands: Iterable[Command] = Command) -> str:
-    """Return a formatted list of all commands with descriptions."""
-    rows = [(cmd.usage, cmd.description) for cmd in commands]
-
-    usage_width = max(len(usage) for usage, _ in rows)
+    """Return the commands with descriptions, grouped into Contacts, Notes and General."""
+    commands = list(commands)
+    usage_width = max(len(cmd.usage) for cmd in commands)
     lines = [f"{Style.BRIGHT}Available commands:{Style.RESET_ALL}"]
-    for usage, description in rows:
-        lines.append(
-            f"  {Fore.GREEN}{usage:<{usage_width}}{Style.RESET_ALL}"
-            f"  {Style.DIM}{description}{Style.RESET_ALL}"
-        )
+    for group in ("Contacts", "Notes", "General"):
+        in_group = [cmd for cmd in commands if cmd.group == group]
+        if not in_group:
+            continue
+        lines.append(f"\n{Style.BRIGHT}{group}{Style.RESET_ALL}")
+        for cmd in in_group:
+            lines.append(
+                f"  {Fore.GREEN}{cmd.usage:<{usage_width}}{Style.RESET_ALL}"
+                f"  {Style.DIM}{cmd.description}{Style.RESET_ALL}"
+            )
     return "\n".join(lines)
 
 

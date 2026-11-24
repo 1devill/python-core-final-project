@@ -1,5 +1,6 @@
 """Parse raw user input into a command name, its arguments, search filters and addresses."""
 
+from personal_assistant.cli.command import Command
 from personal_assistant.exceptions import ValidationError
 
 
@@ -54,3 +55,11 @@ def split_address_args(args: list[str]) -> tuple[str, str]:
     if not address_parts:
         raise ValueError("Address is required")
     return name, " ".join(address_parts)
+
+
+def require_no_args(command: Command, args: list[str]) -> None:
+    """Raise ValidationError, naming the usage, if a command without arguments got some."""
+    if args:
+        raise ValidationError(
+            f"{command.keyword} takes no arguments. Usage: {command.usage}"
+        )

@@ -42,6 +42,23 @@ class ContactBook(UserDict[str, Contact]):
             raise ContactDoesNotExist(Name(name).value)
         return self.data[key]
 
+    def find_by_phone(self, phone: str) -> Contact | None:
+        """Return the contact that has this phone number, or None."""
+        return next(
+            (c for c in self.data.values() if c.find_phone(phone) is not None), None
+        )
+
+    def check_phone_is_free(self, phone: str, contact: Contact | None = None) -> None:
+        """Raise ValidationError if another contact already has this phone.
+
+        The contact itself is skipped: it reports a repeated phone on its own.
+        """
+        owner = self.find_by_phone(phone)
+        if owner is not None and owner is not contact:
+            raise ValidationError(
+                f"Phone number {phone} already belongs to '{owner.name.value}'"
+            )
+
     def delete(self, name: str) -> None:
         """Delete the contact with this name in any case; raises ContactDoesNotExist."""
         key = self._key(name)

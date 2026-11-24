@@ -7,7 +7,7 @@ from personal_assistant.models.fields import Name
 from . import ui
 from .command import Command, Handler
 from .decorators import handle_cmd_error
-from .parser import parse_filters, split_address_args
+from .parser import parse_filters, require_no_args, split_address_args
 
 SEARCH_KEYS = ("name", "phone", "email", "address")
 
@@ -23,10 +23,12 @@ def add_contact(args: list[str], book: ContactBook) -> str:
     try:
         contact = book.find(name)
     except ContactDoesNotExist:
+        book.check_phone_is_free(phone)
         contact = Contact(name)
         contact.add_phone(phone)
         book.add_contact(contact)
         return ui.success(f"Contact '{ui.highlight(contact.name.value)}' added.")
+    book.check_phone_is_free(phone, contact)
     contact.add_phone(phone)
     return ui.success(f"Phone added to '{ui.highlight(contact.name.value)}'.")
 
@@ -36,6 +38,7 @@ def update_contact_phone(args: list[str], book: ContactBook) -> str:
     name, old_phone, new_phone = args
     name = normalize_name(name)
     contact = book.find(name)
+    book.check_phone_is_free(new_phone, contact)
     contact.edit_phone(old_phone, new_phone)
     return ui.success(f"Phone changed for '{ui.highlight(name)}'.")
 
@@ -67,7 +70,9 @@ def get_phones(args: list[str], book: ContactBook) -> str:
     return ui.field("Phones", ", ".join(str(phone) for phone in contact.phones))
 
 
+@handle_cmd_error(Command.ALL)
 def show_all(args: list[str], book: ContactBook) -> str:
+    require_no_args(Command.ALL, args)
     return ui.contact_list(book.values())
 
 
@@ -76,8 +81,25 @@ def add_birthday(args: list[str], book: ContactBook) -> str:
     name, birth_date = args
     name = normalize_name(name)
     contact = book.find(name)
-    contact.add_birthday(birth_date)
-    return ui.success(f"Birthday added for '{ui.highlight(name)}'.")
+    try:
+        contact.add_birthday(birth_date)
+    except ValidationError as e:
+        raise ValidationError(f"{e}. Use {Command.CHANGE_BIRTHDAY.keyword}") from e
+    else:
+        return ui.success(f"Birthday added for '{ui.highlight(name)}'.")
+
+
+@handle_cmd_error(Command.CHANGE_BIRTHDAY)
+def change_birthday(args: list[str], book: ContactBook) -> str:
+    name, birth_date = args
+    name = normalize_name(name)
+    contact = book.find(name)
+    if contact.birthday is None:
+        raise ValidationError(
+            f"Contact '{name}' has no birthday yet. Use {Command.ADD_BIRTHDAY.keyword}"
+        )
+    contact.change_birthday(birth_date)
+    return ui.success(f"Birthday changed for '{ui.highlight(name)}'.")
 
 
 @handle_cmd_error(Command.ADD_EMAIL)
@@ -85,8 +107,25 @@ def add_email(args: list[str], book: ContactBook) -> str:
     name, email = args
     name = normalize_name(name)
     contact = book.find(name)
-    contact.add_email(email)
-    return ui.success(f"Email added for '{ui.highlight(name)}'.")
+    try:
+        contact.add_email(email)
+    except ValidationError as e:
+        raise ValidationError(f"{e}. Use {Command.CHANGE_EMAIL.keyword}") from e
+    else:
+        return ui.success(f"Email added for '{ui.highlight(name)}'.")
+
+
+@handle_cmd_error(Command.CHANGE_EMAIL)
+def change_email(args: list[str], book: ContactBook) -> str:
+    name, email = args
+    name = normalize_name(name)
+    contact = book.find(name)
+    if contact.email is None:
+        raise ValidationError(
+            f"Contact '{name}' has no email yet. Use {Command.ADD_EMAIL.keyword}"
+        )
+    contact.change_email(email)
+    return ui.success(f"Email changed for '{ui.highlight(name)}'.")
 
 
 @handle_cmd_error(Command.ADD_ADDRESS)
@@ -94,8 +133,12 @@ def add_address(args: list[str], book: ContactBook) -> str:
     name, address = split_address_args(args)
     name = normalize_name(name)
     contact = book.find(name)
-    contact.add_address(address)
-    return ui.success(f"Address added for '{ui.highlight(name)}'.")
+    try:
+        contact.add_address(address)
+    except ValidationError as e:
+        raise ValidationError(f"{e}. Use {Command.CHANGE_ADDRESS.keyword}") from e
+    else:
+        return ui.success(f"Address added for '{ui.highlight(name)}'.")
 
 
 @handle_cmd_error(Command.CHANGE_ADDRESS)
@@ -107,7 +150,7 @@ def change_address(args: list[str], book: ContactBook) -> str:
         raise ValidationError(
             f"Contact '{name}' has no address yet. Use {Command.ADD_ADDRESS.keyword}"
         )
-    contact.add_address(address)
+    contact.change_address(address)
     return ui.success(f"Address changed for '{ui.highlight(name)}'.")
 
 
@@ -202,4 +245,6 @@ CONTACT_COMMANDS: dict[Command, Handler[ContactBook]] = {
     Command.REMOVE_PHONE: remove_phone,
     Command.SHOW_UPCOMING_BIRTHDAYS: get_upcoming_birthdays,
     Command.FIND_CONTACTS: find_contacts,
+    Command.CHANGE_EMAIL: change_email,
+    Command.CHANGE_BIRTHDAY: change_birthday,
 }
