@@ -6,8 +6,8 @@ from personal_assistant.models.fields import Name
 
 from . import ui
 from .command import Command, Handler
-from .decorators import handle_cmd_error, require_no_args
-from .parser import parse_filters, split_address_args
+from .decorators import handle_cmd_error
+from .parser import parse_filters, require_no_args, split_address_args
 
 SEARCH_KEYS = ("name", "phone", "email", "address")
 

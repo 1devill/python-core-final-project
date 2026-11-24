@@ -12,7 +12,7 @@ from personal_assistant.cli import (
     parse_input,
     ui,
 )
-from personal_assistant.cli.decorators import require_no_args
+from personal_assistant.cli.parser import require_no_args
 from personal_assistant.exceptions import AIParserError, ValidationError
 from personal_assistant.models import ContactBook, NoteBook
 from personal_assistant.storage import Storage
