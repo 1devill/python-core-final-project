@@ -274,8 +274,8 @@ every push to `main`:
 
 | Job                      | What it does                                                                  |
 | ------------------------ | ----------------------------------------------------------------------------- |
-| Format, lint and types   | `black --check .`, `ruff check .` and `mypy src tests`                        |
-| Tests                    | `pytest` with coverage on Python 3.10 to 3.13 (Ubuntu), and 3.13 on Windows and macOS |
+| Format, lint and types   | `black --check .`, `ruff check .` and `mypy src tests` (Python 3.15)          |
+| Tests                    | `pytest` with coverage on Python 3.10 and 3.15 (Ubuntu) and Python 3.15 (Windows) |
 | Install as a user        | `pip install .` in a clean virtual environment, then runs `assistant` from another folder and checks that data survives a restart |
 
 A pull request should be merged only when all jobs are green.
