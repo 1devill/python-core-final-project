@@ -30,6 +30,7 @@ class Command(Enum):
     aliases: tuple[str, ...]
 
     HELLO = ("hello", "hello", "Greet the assistant")
+
     ADD = (
         "add",
         "add [name] [phone]",
@@ -50,108 +51,13 @@ class Command(Enum):
         "add-address [name] [address]",
         "Add an address to a contact",
     )
-    ADD_NOTE = (
-        "add-note",
-        "add-note [name] [tag1,tag2] [text]",
-        "Add a note with comma-separated tags",
-    )
-    REMOVE_CONTACT = (
-        "remove",
-        "remove [name]",
-        "Remove a contact",
-    )
-    REMOVE_PHONE = (
-        "remove-phone",
-        "remove-phone [name] [phone]",
-        "Remove a contact's phone",
-    )
-    REMOVE_EMAIL = (
-        "remove-email",
-        "remove-email [name]",
-        "Remove an email of a contact",
-    )
-    REMOVE_BIRTHDAY = (
-        "remove-birthday",
-        "remove-birthday [name]",
-        "Remove a contact's birthday",
-    )
-    REMOVE_ADDRESS = (
-        "remove-address",
-        "remove-address [name]",
-        "Remove a contact's address",
-    )
-    REMOVE_NOTE = (
-        "remove-note",
-        "remove-note [name]",
-        "Remove a note",
-    )
-    REMOVE_NOTE_TAG = (
-        "remove-note-tag",
-        "remove-note-tag [name] [tag]",
-        "Remove a tag from a note",
-    )
-    ADD_NOTE_TAG = (
-        "add-note-tag",
-        "add-note-tag [name] [tag1,tag2]",
-        "Add a tag to a note",
-    )
-    CHANGE_NOTE_TAG = (
-        "change-note-tag",
-        "change-note-tag [name] [old tag] [new tag]",
-        "Replace a note's tag",
-    )
-    CHANGE_NOTE_TEXT = (
-        "change-note-text",
-        "change-note-text [name] [text]",
-        "Change note text",
-    )
-    CHANGE_PHONE = (
-        "change-phone",
-        "change-phone [name] [old phone] [new phone]",
-        "Change a contact's phone",
-    )
-    CHANGE_ADDRESS = (
-        "change-address",
-        "change-address [name] [new address]",
-        "Change a contact's address",
-    )
-    CHANGE_BIRTHDAY = (
-        "change-birthday",
-        "change-birthday [name] [DD.MM.YYYY]",
-        "Change a contact's birthday",
-    )
-    CHANGE_EMAIL = (
-        "change-email",
-        "change-email [name] [email]",
-        "Change a contact's email",
-    )
+
     ALL = ("all", "all", "Show all contacts")
-    ALL_NOTES = ("all-notes", "all-notes", "Show all notes")
-    SORT_NOTES = (
-        "sort-notes",
-        "sort-notes [tag]",
-        "Show all notes, the ones with [tag] first",
-    )
-    FIND_NOTES = (
-        "find-notes",
-        "find-notes [name=..] [tag=..] [text=..]",
-        "Find notes matching all given filters",
-    )
-    FIND_CONTACTS = (
-        "find-contacts",
-        "find-contacts [name=..] [phone=..] [email=..] [address=..]",
-        "Find contacts matching all given filters",
-    )
     SHOW_PHONE = ("phone", "phone [name]", "Show a contact's phones")
     SHOW_BIRTHDAY = (
         "show-birthday",
         "show-birthday [name]",
         "Show a contact's birthday",
-    )
-    SHOW_UPCOMING_BIRTHDAYS = (
-        "show-upcoming-birthdays",
-        "show-upcoming-birthdays [days]",
-        "Show upcoming birthdays in next given days",
     )
     SHOW_EMAIL = (
         "show-email",
@@ -163,6 +69,109 @@ class Command(Enum):
         "show-address [name]",
         "Show a contact's address",
     )
+    SHOW_UPCOMING_BIRTHDAYS = (
+        "show-upcoming-birthdays",
+        "show-upcoming-birthdays [days]",
+        "Show upcoming birthdays in next given days",
+    )
+    FIND_CONTACTS = (
+        "find-contacts",
+        "find-contacts [name=..] [phone=..] [email=..] [address=..]",
+        "Find contacts matching all given filters",
+    )
+
+    CHANGE_PHONE = (
+        "change-phone",
+        "change-phone [name] [old phone] [new phone]",
+        "Change a contact's phone",
+    )
+    CHANGE_BIRTHDAY = (
+        "change-birthday",
+        "change-birthday [name] [DD.MM.YYYY]",
+        "Change a contact's birthday",
+    )
+    CHANGE_EMAIL = (
+        "change-email",
+        "change-email [name] [email]",
+        "Change a contact's email",
+    )
+    CHANGE_ADDRESS = (
+        "change-address",
+        "change-address [name] [new address]",
+        "Change a contact's address",
+    )
+
+    REMOVE_CONTACT = (
+        "remove",
+        "remove [name]",
+        "Remove a contact",
+    )
+    REMOVE_PHONE = (
+        "remove-phone",
+        "remove-phone [name] [phone]",
+        "Remove a contact's phone",
+    )
+    REMOVE_BIRTHDAY = (
+        "remove-birthday",
+        "remove-birthday [name]",
+        "Remove a contact's birthday",
+    )
+    REMOVE_EMAIL = (
+        "remove-email",
+        "remove-email [name]",
+        "Remove an email of a contact",
+    )
+    REMOVE_ADDRESS = (
+        "remove-address",
+        "remove-address [name]",
+        "Remove a contact's address",
+    )
+
+    ADD_NOTE = (
+        "add-note",
+        "add-note [name] [tag1,tag2] [text]",
+        "Add a note with comma-separated tags",
+    )
+    ADD_NOTE_TAG = (
+        "add-note-tag",
+        "add-note-tag [name] [tag1,tag2]",
+        "Add a tag to a note",
+    )
+
+    ALL_NOTES = ("all-notes", "all-notes", "Show all notes")
+    FIND_NOTES = (
+        "find-notes",
+        "find-notes [name=..] [tag=..] [text=..]",
+        "Find notes matching all given filters",
+    )
+    SORT_NOTES = (
+        "sort-notes",
+        "sort-notes [tag]",
+        "Show all notes, the ones with [tag] first",
+    )
+
+    CHANGE_NOTE_TEXT = (
+        "change-note-text",
+        "change-note-text [name] [text]",
+        "Change note text",
+    )
+    CHANGE_NOTE_TAG = (
+        "change-note-tag",
+        "change-note-tag [name] [old tag] [new tag]",
+        "Replace a note's tag",
+    )
+
+    REMOVE_NOTE = (
+        "remove-note",
+        "remove-note [name]",
+        "Remove a note",
+    )
+    REMOVE_NOTE_TAG = (
+        "remove-note-tag",
+        "remove-note-tag [name] [tag]",
+        "Remove a tag from a note",
+    )
+
     HELP = ("help", "help", "Show this help message")
     EXIT = (
         "exit",
@@ -195,6 +204,14 @@ class Command(Enum):
             if normalized == command.keyword or normalized in command.aliases:
                 return command
         return None
+
+    @property
+    def action(self) -> str:
+        """What the command does: add, view, change or remove (general for hello, help, exit)."""
+        if self.group == "General":
+            return "general"
+        verb = self.keyword.split("-")[0]
+        return verb if verb in ("add", "change", "remove") else "view"
 
     @property
     def group(self) -> str:

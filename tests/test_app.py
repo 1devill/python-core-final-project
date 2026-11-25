@@ -6,7 +6,7 @@ import sys
 
 import pytest
 
-from conftest import SRC_DIR
+from conftest import SRC_DIR, plain
 
 DATA_FOLDER = ".personal_assistant"
 
@@ -132,3 +132,15 @@ def test_killed_app_keeps_finished_commands(app):
     process.stdout.close()
     process.stdin.close()
     assert "Anna" in app("all").stdout
+
+
+def test_help_orders_commands_by_action(app):
+    """Add, view and find, change, remove: one block each, split by a blank line."""
+    help_text = plain(app("help").stdout).split("Available commands:")[1]
+    contacts = help_text.split("\nContacts\n")[1].split("\nNotes\n")[0]
+    blocks = [block.splitlines() for block in contacts.strip().split("\n\n")]
+    firsts = [block[0].split()[0].split("-")[0] for block in blocks]
+    assert firsts == ["add", "all", "change", "remove"]
+    assert all(line.split()[0].startswith("add") for line in blocks[0])
+    assert all(line.split()[0].startswith("change") for line in blocks[2])
+    assert all(line.split()[0].startswith("remove") for line in blocks[3])

@@ -64,18 +64,18 @@ The assistant runs in an interactive loop: type a command, press Enter, and it r
 | Command                                                      | Description                                     |
 | ------------------------------------------------------------ | ----------------------------------------------- |
 | `add [name] [phone]`                                         | Add a contact or a phone to an existing contact |
-| `change-phone [name] [old phone] [new phone]`                | Change a contact's phone                        |
-| `phone [name]`                                               | Show a contact's phones                         |
-| `all`                                                        | Show all contacts                               |
-| `find-contacts [name=..] [phone=..] [email=..] [address=..]` | Find contacts matching all given filters        |
 | `add-birthday [name] [DD.MM.YYYY]`                           | Add a birthday (fails if one is set)            |
 | `add-email [name] [email]`                                   | Add an email (fails if one is set)              |
 | `add-address [name] [address]`                               | Add an address (fails if one is set)            |
+| `all`                                                        | Show all contacts                               |
+| `phone [name]`                                               | Show a contact's phones                         |
+| `show-birthday` / `show-email` / `show-address [name]`       | Show a contact's birthday / email / address     |
+| `show-upcoming-birthdays [days]`                             | Show birthdays within the next N days           |
+| `find-contacts [name=..] [phone=..] [email=..] [address=..]` | Find contacts matching all given filters        |
+| `change-phone [name] [old phone] [new phone]`                | Change a contact's phone                        |
 | `change-birthday [name] [DD.MM.YYYY]`                        | Change a contact's birthday                     |
 | `change-email [name] [email]`                                | Change a contact's email                        |
 | `change-address [name] [new address]`                        | Change a contact's address                      |
-| `show-birthday` / `show-email` / `show-address [name]`       | Show a contact's birthday / email / address     |
-| `show-upcoming-birthdays [days]`                             | Show birthdays within the next N days           |
 | `remove [name]`                                              | Remove a contact                                |
 | `remove-phone [name] [phone]`                                | Remove a contact's phone                        |
 | `remove-birthday` / `remove-email` / `remove-address [name]` | Remove a contact's birthday / email / address   |
@@ -85,14 +85,14 @@ The assistant runs in an interactive loop: type a command, press Enter, and it r
 | Command                                                      | Description                                     |
 | ------------------------------------------------------------ | ----------------------------------------------- |
 | `add-note [name] [tag1,tag2] [text]`                         | Add a note (at least one tag, comma-separated)  |
+| `add-note-tag [name] [tag1,tag2]`                            | Add a tag to a note                             |
 | `all-notes`                                                  | Show all notes                                  |
 | `find-notes [name=..] [tag=..] [text=..]`                    | Find notes matching all given filters           |
 | `sort-notes [tag]`                                           | Show all notes, the ones with `[tag]` first     |
 | `change-note-text [name] [text]`                             | Change a note's text                            |
-| `add-note-tag [name] [tag1,tag2]`                            | Add a tag to a note                             |
 | `change-note-tag [name] [old tag] [new tag]`                 | Replace a note's tag                            |
-| `remove-note-tag [name] [tag]`                               | Remove a tag (the last one can't be removed)    |
 | `remove-note [name]`                                         | Remove a note                                   |
+| `remove-note-tag [name] [tag]`                               | Remove a tag (the last one can't be removed)    |
 
 ### General commands
 

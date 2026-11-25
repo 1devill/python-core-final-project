@@ -38,7 +38,11 @@ def prompt() -> str:
 
 
 def help_table(commands: Iterable[Command] = Command) -> str:
-    """Return the commands with descriptions, grouped into Contacts, Notes and General."""
+    """Return the commands with descriptions, grouped into Contacts, Notes and General.
+
+    Inside a group the commands follow the order of the Command enum: add, view and find,
+    change, remove, with a blank line between these blocks.
+    """
     commands = list(commands)
     usage_width = max(len(cmd.usage) for cmd in commands)
     lines = [f"{Style.BRIGHT}Available commands:{Style.RESET_ALL}"]
@@ -47,7 +51,11 @@ def help_table(commands: Iterable[Command] = Command) -> str:
         if not in_group:
             continue
         lines.append(f"\n{Style.BRIGHT}{group}{Style.RESET_ALL}")
+        previous = in_group[0].action
         for cmd in in_group:
+            if cmd.action != previous:
+                lines.append("")  # blank line between add, view, change and remove
+                previous = cmd.action
             lines.append(
                 f"  {Fore.GREEN}{cmd.usage:<{usage_width}}{Style.RESET_ALL}"
                 f"  {Style.DIM}{cmd.description}{Style.RESET_ALL}"

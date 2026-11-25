@@ -75,3 +75,21 @@ def test_readme_usage_follows_the_help_groups():
     }
     for command in Command:
         assert f"`{command.keyword}" in sections[command.group], command.keyword
+
+
+def test_readme_usage_rows_follow_the_command_order():
+    import re
+
+    from personal_assistant.cli import Command
+
+    index = {command.keyword: i for i, command in enumerate(Command)}
+    readme = (PYPROJECT.parent / "README.md").read_text(encoding="utf-8")
+    usage = readme.split("## Usage")[1].split("## Project structure")[0]
+    for title in ("Contact commands", "Note commands", "General commands"):
+        section = usage.split(f"### {title}")[1].split("###")[0]
+        positions = [
+            index[re.search(r"`([a-z-]+)", row).group(1)]
+            for row in section.splitlines()
+            if row.startswith("| `")
+        ]
+        assert positions == sorted(positions), title
