@@ -144,3 +144,11 @@ def test_help_orders_commands_by_action(app):
     assert all(line.split()[0].startswith("add") for line in blocks[0])
     assert all(line.split()[0].startswith("change") for line in blocks[2])
     assert all(line.split()[0].startswith("remove") for line in blocks[3])
+
+
+def test_renamed_contact_survives_a_restart(app):
+    app("add anna 0123456789", "add-email anna a@b.co", "change-name anna anne")
+    result = app("all")
+    assert "Anne" in plain(result.stdout)
+    assert "a@b.co" in result.stdout
+    assert "Anna" not in plain(result.stdout).split("Contacts (")[1]

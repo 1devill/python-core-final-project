@@ -190,3 +190,22 @@ class TestOrder:
         make_contact("anna")
         book.sorted_contacts()
         assert list(book.data) == ["Zed", "Anna"]
+
+
+class TestRename:
+    def test_rename_keeps_the_contact_object(self, book, make_contact):
+        anna = make_contact("anna", phones=["0123456789"])
+        assert book.rename("ANNA", "anne") is anna
+        assert anna.name.value == "Anne"
+        assert list(book.data) == ["Anne"]
+
+    def test_failed_rename_changes_nothing(self, book, make_contact):
+        make_contact("anna")
+        make_contact("bob")
+        for old, new in [("anna", "bob"), ("anna", "anna"), ("anna", " ")]:
+            with pytest.raises(ValidationError):
+                book.rename(old, new)
+        with pytest.raises(ContactDoesNotExist):
+            book.rename("ghost", "zed")
+        assert set(book.data) == {"Anna", "Bob"}
+        assert book["Anna"].name.value == "Anna"

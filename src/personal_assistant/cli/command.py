@@ -80,6 +80,11 @@ class Command(Enum):
         "Find contacts matching all given filters",
     )
 
+    CHANGE_NAME = (
+        "change-name",
+        "change-name [name] [new name]",
+        "Rename a contact",
+    )
     CHANGE_PHONE = (
         "change-phone",
         "change-phone [name] [old phone] [new phone]",

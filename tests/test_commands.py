@@ -533,6 +533,75 @@ class TestDefaultOrder:
         assert self.names(run("all")) == first
 
 
+class TestRenameContact:
+    def test_rename_moves_everything_to_the_new_name(self, run, book):
+        run("add anna 0123456789")
+        run("add-email anna a@b.co")
+        run("add-birthday anna 15.03.1990")
+        run("add-address anna Kyiv Main St")
+        assert "renamed to 'Anne'" in run("change-name anna anne")
+        assert "Anna" not in book
+        contact = book["Anne"]
+        assert contact.name.value == "Anne"
+        assert [p.value for p in contact.phones] == ["0123456789"]
+        assert contact.email.value == "a@b.co"
+        assert contact.birthday.value == "15.03.1990"
+        assert contact.address.value == "Kyiv Main St"
+
+    def test_old_name_no_longer_exists(self, run):
+        run("add anna 0123456789")
+        run("change-name anna anne")
+        assert "does not exist" in run("phone anna")
+        assert "0123456789" in run("phone ANNE")
+
+    def test_old_name_is_found_in_any_case(self, run, book):
+        run("add anna 0123456789")
+        assert "renamed" in run("change-name ANNA anne")
+        assert "Anne" in book
+
+    def test_new_name_is_normalized(self, run, book):
+        run("add anna 0123456789")
+        run("change-name anna ANNE")
+        assert "Anne" in book
+
+    def test_taken_name_is_refused_in_any_case(self, run, book):
+        run("add anna 0123456789")
+        run("add bob 0987654321")
+        answer = run("change-name bob ANNA")
+        assert "already exists" in answer
+        assert set(book) == {"Anna", "Bob"}
+        assert [p.value for p in book["Bob"].phones] == ["0987654321"]
+
+    @pytest.mark.parametrize("new_name", ["anna", "ANNA", "Anna"])
+    def test_same_name_is_refused(self, run, book, new_name):
+        run("add anna 0123456789")
+        answer = run(f"change-name anna {new_name}")
+        assert "same as the current" in answer
+        assert "renamed" not in answer
+
+    def test_missing_contact(self, run):
+        assert "does not exist" in run("change-name ghost anne")
+
+    @pytest.mark.parametrize(
+        "line", ["change-name", "change-name anna", "change-name a b c"]
+    )
+    def test_wrong_arguments_show_usage(self, run, book, line):
+        run("add anna 0123456789")
+        assert "Usage: change-name" in run(line)
+        assert list(book) == ["Anna"]
+
+    def test_case_only_change_of_a_mixed_case_name(self, run, book):
+        run("add McDonald 0123456789")
+        run("add-email McDonald a@b.co")
+        assert "renamed" in run("change-name mcdonald MacDonald")
+        assert list(book) == ["MacDonald"]
+
+    def test_phone_stays_unique_after_rename(self, run):
+        run("add anna 0123456789")
+        run("change-name anna anne")
+        assert "already belongs to 'Anne'" in run("add bob 0123456789")
+
+
 class TestUpcomingBirthdaysCommand:
     @pytest.mark.parametrize(
         "line",

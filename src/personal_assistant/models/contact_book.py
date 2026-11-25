@@ -42,6 +42,27 @@ class ContactBook(UserDict[str, Contact]):
             raise ContactDoesNotExist(Name(name).value)
         return self.data[key]
 
+    def rename(self, name: str, new_name: str) -> Contact:
+        """Give a contact a new name and return it.
+
+        Raises ContactDoesNotExist if there is no contact with the old name, and
+        ValidationError if the new name is invalid, the same as the current one, or
+        used by another contact in any case. Nothing changes if it raises.
+        """
+        key = self._key(name)
+        if key is None:
+            raise ContactDoesNotExist(Name(name).value)
+        new = Name(new_name)
+        if new.value == key:
+            raise ValidationError("New name is the same as the current one")
+        taken = self._key(new.value)
+        if taken is not None and taken != key:
+            raise ValidationError(f"Contact '{taken}' already exists")
+        contact = self.data.pop(key)
+        contact.name = new
+        self.data[new.value] = contact
+        return contact
+
     def find_by_phone(self, phone: str) -> Contact | None:
         """Return the contact that has this phone number, or None."""
         return next(

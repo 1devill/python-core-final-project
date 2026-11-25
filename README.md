@@ -72,6 +72,7 @@ The assistant runs in an interactive loop: type a command, press Enter, and it r
 | `show-birthday` / `show-email` / `show-address [name]`       | Show a contact's birthday / email / address     |
 | `show-upcoming-birthdays [days]`                             | Show birthdays within the next N days           |
 | `find-contacts [name=..] [phone=..] [email=..] [address=..]` | Find contacts matching all given filters        |
+| `change-name [name] [new name]`                              | Rename a contact                                |
 | `change-phone [name] [old phone] [new phone]`                | Change a contact's phone                        |
 | `change-birthday [name] [DD.MM.YYYY]`                        | Change a contact's birthday                     |
 | `change-email [name] [email]`                                | Change a contact's email                        |
@@ -132,6 +133,7 @@ whatever order they were added in. `show-upcoming-birthdays` is sorted by the da
 All contact and note commands follow the same rules:
 
 - `add-birthday`, `add-email` and `add-address` **set a missing value**. If the contact already has one, the command is refused and points to the matching `change-*` command.
+- `change-name` renames a contact. It is refused if the new name is the same or already used by another contact. Notes can't be renamed: remove the note and add it again.
 - `change-phone`, `change-birthday`, `change-email`, `change-address`, `change-note-text` and `change-note-tag` **replace an existing value**. They are refused if there is nothing to change (use `add-*`) or if the new value is the same as the old one.
 - A refused or invalid command never changes the data.
 - A phone number can belong to only one contact. `add` and `change-phone` refuse a number that another contact already has.
