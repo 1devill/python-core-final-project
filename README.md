@@ -34,7 +34,7 @@ See [Data storage](#data-storage) for how saving and recovery work.
 ## Installation
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/1devill/python-core-final-project.git
 cd python-core-final-project
 
 python -m venv .venv
@@ -64,42 +64,76 @@ The assistant runs in an interactive loop: type a command, press Enter, and it r
 - If you mistype a command, the assistant suggests the closest one (`Did you mean 'add'?`).
 - `Ctrl+C` or `Ctrl+D` at the prompt also saves your data and exits.
 
+### Contact commands
+
 | Command                                                      | Description                                     |
 | ------------------------------------------------------------ | ----------------------------------------------- |
-| `hello`                                                      | Greeting                                        |
 | `add [name] [phone]`                                         | Add a contact or a phone to an existing contact |
-| `change-phone [name] [old phone] [new phone]`                | Change a contact's phone                        |
-| `phone [name]`                                               | Show a contact's phones                         |
-| `all`                                                        | Show all contacts                               |
-| `find-contacts [name=..] [phone=..] [email=..] [address=..]` | Find contacts matching all given filters        |
 | `add-birthday [name] [DD.MM.YYYY]`                           | Add a birthday (fails if one is set)            |
 | `add-email [name] [email]`                                   | Add an email (fails if one is set)              |
 | `add-address [name] [address]`                               | Add an address (fails if one is set)            |
+| `all`                                                        | Show all contacts                               |
+| `phone [name]`                                               | Show a contact's phones                         |
+| `show-birthday` / `show-email` / `show-address [name]`       | Show a contact's birthday / email / address     |
+| `show-upcoming-birthdays [days]`                             | Show birthdays within the next N days (N ≥ 0)   |
+| `find-contacts [name=..] [phone=..] [email=..] [address=..]` | Find contacts matching all given filters        |
+| `change-name [name] [new name]`                              | Rename a contact                                |
+| `change-phone [name] [old phone] [new phone]`                | Change a contact's phone                        |
 | `change-birthday [name] [DD.MM.YYYY]`                        | Change a contact's birthday                     |
 | `change-email [name] [email]`                                | Change a contact's email                        |
 | `change-address [name] [new address]`                        | Change a contact's address                      |
-| `show-birthday` / `show-email` / `show-address [name]`       | Show a contact's birthday / email / address     |
-| `show-upcoming-birthdays [days]`                             | Show birthdays within the next N days (N ≥ 0)   |
 | `remove [name]`                                              | Remove a contact                                |
 | `remove-phone [name] [phone]`                                | Remove a contact's phone                        |
 | `remove-birthday` / `remove-email` / `remove-address [name]` | Remove a contact's birthday / email / address   |
+
+### Note commands
+
+| Command                                                      | Description                                     |
+| ------------------------------------------------------------ | ----------------------------------------------- |
 | `add-note [name] [tag1,tag2] [text]`                         | Add a note (at least one tag, comma-separated)  |
+| `add-note-tag [name] [tag1,tag2]`                            | Add a tag to a note                             |
 | `all-notes`                                                  | Show all notes                                  |
 | `find-notes [name=..] [tag=..] [text=..]`                    | Find notes matching all given filters           |
 | `sort-notes [tag]`                                           | Show all notes, the ones with `[tag]` first     |
+| `change-note-name [name] [new name]`                         | Rename a note                                   |
 | `change-note-text [name] [text]`                             | Change a note's text                            |
-| `add-note-tag [name] [tag1,tag2]`                            | Add a tag to a note                             |
 | `change-note-tag [name] [old tag] [new tag]`                 | Replace a note's tag                            |
-| `remove-note-tag [name] [tag]`                               | Remove a tag (the last one can't be removed)    |
 | `remove-note [name]`                                         | Remove a note                                   |
+| `remove-note-tag [name] [tag]`                               | Remove a tag (the last one can't be removed)    |
+
+### General commands
+
+| Command                                                      | Description                                     |
+| ------------------------------------------------------------ | ----------------------------------------------- |
+| `hello`                                                      | Greeting                                        |
 | `help`                                                       | Show all commands, grouped by area              |
 | `exit` / `close` / `bye` / `quit`                            | Save data and exit                              |
+
+### Adding notes
+
+`add-note [name] [tag1,tag2] [text]` always reads the word after the name as the tags, and everything
+after it as the text. The answer shows the tags that were saved, so a mistake is easy to spot:
+
+```text
+add-note shop home,food buy milk   →  Note 'Shop' added with tags #home, #food.
+add-note shop buy milk             →  Note 'Shop' added with tags #buy.   (text: "milk")
+```
+
+`add-note` with no tags or text shows this explanation. `sort-notes [tag]` with a tag no note has
+says so and then lists all notes.
+
+### Order of lists
+
+`all`, `all-notes`, `find-contacts` and `find-notes` show items sorted by name (A to Z, ignoring case),
+whatever order they were added in. `show-upcoming-birthdays` is sorted by the date of the next birthday.
+`sort-notes [tag]` keeps its own order: notes with the tag first, then the rest, each part by name.
 
 ### Editing rules
 
 All contact and note commands follow the same rules:
 
 - `add-birthday`, `add-email` and `add-address` **set a missing value**. If the contact already has one, the command is refused and points to the matching `change-*` command.
+- `change-name` and `change-note-name` rename a contact or a note. They are refused if the new name is the same or already used by another contact or note.
 - `change-phone`, `change-birthday`, `change-email`, `change-address`, `change-note-text` and `change-note-tag` **replace an existing value**. They are refused if there is nothing to change (use `add-*`) or if the new value is the same as the old one.
 - A refused or invalid command never changes the data.
 - A phone number can belong to only one contact. `add` and `change-phone` refuse a number that another contact already has.

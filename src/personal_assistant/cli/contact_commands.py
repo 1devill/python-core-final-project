@@ -33,6 +33,16 @@ def add_contact(args: list[str], book: ContactBook) -> str:
     return ui.success(f"Phone added to '{ui.highlight(contact.name.value)}'.")
 
 
+@handle_cmd_error(Command.CHANGE_NAME)
+def change_name(args: list[str], book: ContactBook) -> str:
+    name, new_name = args
+    contact = book.rename(name, new_name)
+    return ui.success(
+        f"Contact '{ui.highlight(normalize_name(name))}' renamed to "
+        f"'{ui.highlight(contact.name.value)}'."
+    )
+
+
 @handle_cmd_error(Command.CHANGE_PHONE)
 def update_contact_phone(args: list[str], book: ContactBook) -> str:
     name, old_phone, new_phone = args
@@ -73,7 +83,7 @@ def get_phones(args: list[str], book: ContactBook) -> str:
 @handle_cmd_error(Command.ALL)
 def show_all(args: list[str], book: ContactBook) -> str:
     require_no_args(Command.ALL, args)
-    return ui.contact_list(book.values())
+    return ui.contact_list(book.sorted_contacts())
 
 
 @handle_cmd_error(Command.ADD_BIRTHDAY)
@@ -228,6 +238,7 @@ def find_contacts(args: list[str], book: ContactBook) -> str:
 
 CONTACT_COMMANDS: dict[Command, Handler[ContactBook]] = {
     Command.ADD: add_contact,
+    Command.CHANGE_NAME: change_name,
     Command.CHANGE_PHONE: update_contact_phone,
     Command.SHOW_PHONE: get_phones,
     Command.ALL: show_all,

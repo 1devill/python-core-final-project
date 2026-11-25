@@ -42,6 +42,27 @@ class ContactBook(UserDict[str, Contact]):
             raise ContactDoesNotExist(Name(name).value)
         return self.data[key]
 
+    def rename(self, name: str, new_name: str) -> Contact:
+        """Give a contact a new name and return it.
+
+        Raises ContactDoesNotExist if there is no contact with the old name, and
+        ValidationError if the new name is invalid, the same as the current one, or
+        used by another contact in any case. Nothing changes if it raises.
+        """
+        key = self._key(name)
+        if key is None:
+            raise ContactDoesNotExist(Name(name).value)
+        new = Name(new_name)
+        if new.value == key:
+            raise ValidationError("New name is the same as the current one")
+        taken = self._key(new.value)
+        if taken is not None and taken != key:
+            raise ValidationError(f"Contact '{taken}' already exists")
+        contact = self.data.pop(key)
+        contact.name = new
+        self.data[new.value] = contact
+        return contact
+
     def find_by_phone(self, phone: str) -> Contact | None:
         """Return the contact that has this phone number, or None."""
         return next(
@@ -66,6 +87,12 @@ class ContactBook(UserDict[str, Contact]):
             raise ContactDoesNotExist(Name(name).value)
 
         del self.data[key]
+
+    def sorted_contacts(self) -> list[Contact]:
+        """Return all contacts sorted by name, ignoring case."""
+        return sorted(
+            self.data.values(), key=lambda contact: contact.name.value.casefold()
+        )
 
     def find_upcoming_birthdays(self, days_interval: int) -> list[UpcomingBirthday]:
         today = date.today()
@@ -98,7 +125,7 @@ class ContactBook(UserDict[str, Contact]):
         :param phone: part of any of the contact phones: str
         :param email: part of the contact email: str, any case
         :param address: part of the contact address: str, any case
-        :return: list[Contact], empty if nothing matches; raises ValueError if no filter is given
+        :return: list[Contact] sorted by name, empty if nothing matches; raises ValueError if no filter is given
             and ValidationError if a given filter is empty ("" is in every text and would match all contacts)
         """
         filters = {"name": name, "phone": phone, "email": email, "address": address}
@@ -108,7 +135,7 @@ class ContactBook(UserDict[str, Contact]):
             if value is not None and not value.strip():
                 raise ValidationError(f"Filter '{key}' must not be empty")
 
-        contacts = list(self.data.values())
+        contacts = self.sorted_contacts()
         if name is not None:
             name = name.lower()
             contacts = [

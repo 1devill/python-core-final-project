@@ -118,7 +118,7 @@ class TestNoteBook:
         "filters, expected",
         [
             ({"name": "shop"}, ["Shop"]),
-            ({"tag": "HOME"}, ["Shop", "Alpha"]),
+            ({"tag": "HOME"}, ["Alpha", "Shop"]),  # sorted by name
             ({"text": "MILK"}, ["Shop", "Work"]),
             ({"tag": "home", "text": "milk"}, ["Shop"]),
             ({"name": "shop", "tag": "office"}, []),
@@ -142,3 +142,25 @@ class TestNoteBook:
 
     def test_sort_by_unknown_tag_keeps_every_note(self, notes):
         assert names(notes.sort_by_tag("nope")) == ["Alpha", "Shop", "Work"]
+
+
+class TestRename:
+    @pytest.fixture(autouse=True)
+    def stored(self, notes):
+        notes.add_note(Note("shop", ["home", "food"], "buy milk"))
+        notes.add_note(Note("work", ["office"], "send milk report"))
+
+    def test_rename_keeps_the_note_object(self, notes):
+        note = notes.get_note("shop")
+        assert notes.rename("SHOP", "groceries") is note
+        assert note.name.value == "Groceries"
+        assert "Groceries" in notes.data and "Shop" not in notes.data
+
+    def test_failed_rename_changes_nothing(self, notes):
+        before = set(notes.data)
+        for old, new in [("shop", "work"), ("shop", "SHOP"), ("shop", " ")]:
+            with pytest.raises(ValidationError):
+                notes.rename(old, new)
+        with pytest.raises(NoteDoesNotExist):
+            notes.rename("ghost", "other")
+        assert set(notes.data) == before

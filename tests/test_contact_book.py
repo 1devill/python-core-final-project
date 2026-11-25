@@ -171,3 +171,41 @@ class TestPhoneOwner:
         make_contact("anna", phones=["0123456789"])
         make_contact("bob", phones=["0123456789"])
         assert len(book) == 2
+
+
+class TestOrder:
+    def test_sorted_contacts_ignore_case(self, book, make_contact):
+        for name in ("zed", "Anna", "bob"):
+            make_contact(name)
+        assert [c.name.value for c in book.sorted_contacts()] == ["Anna", "Bob", "Zed"]
+
+    def test_search_results_are_sorted(self, book, make_contact):
+        make_contact("zed", phones=["0501111111"])
+        make_contact("anna", phones=["0502222222"])
+        found = book.search_contacts(phone="050")
+        assert [c.name.value for c in found] == ["Anna", "Zed"]
+
+    def test_sorting_does_not_change_the_book(self, book, make_contact):
+        make_contact("zed")
+        make_contact("anna")
+        book.sorted_contacts()
+        assert list(book.data) == ["Zed", "Anna"]
+
+
+class TestRename:
+    def test_rename_keeps_the_contact_object(self, book, make_contact):
+        anna = make_contact("anna", phones=["0123456789"])
+        assert book.rename("ANNA", "anne") is anna
+        assert anna.name.value == "Anne"
+        assert list(book.data) == ["Anne"]
+
+    def test_failed_rename_changes_nothing(self, book, make_contact):
+        make_contact("anna")
+        make_contact("bob")
+        for old, new in [("anna", "bob"), ("anna", "anna"), ("anna", " ")]:
+            with pytest.raises(ValidationError):
+                book.rename(old, new)
+        with pytest.raises(ContactDoesNotExist):
+            book.rename("ghost", "zed")
+        assert set(book.data) == {"Anna", "Bob"}
+        assert book["Anna"].name.value == "Anna"

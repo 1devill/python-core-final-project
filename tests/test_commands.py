@@ -448,6 +448,207 @@ class TestEmailCase:
         assert "changed" not in run("change-email anna A@B.CO")
 
 
+class TestNoteHints:
+    @pytest.mark.parametrize("line", ["add-note", "add-note shop"])
+    def test_add_note_without_tags_explains_the_syntax(self, run, notes, line):
+        answer = run(line)
+        assert "needs a name, tags and text" in answer
+        assert "Example: add-note shop home,food buy milk" in answer
+        assert "word after the name" in answer
+        assert len(notes) == 0
+
+    def test_add_note_without_text_keeps_its_own_message(self, run):
+        assert "must not be empty" in run("add-note shop home")
+
+    def test_sort_by_unknown_tag_says_so_and_lists_all_notes(self, run):
+        run("add-note shop home buy milk")
+        run("add-note work office report")
+        answer = run("sort-notes zzz")
+        assert "No note has the tag 'zzz'" in answer
+        assert "Shop" in answer and "Work" in answer
+
+    def test_sort_by_known_tag_has_no_warning(self, run):
+        run("add-note shop home buy milk")
+        run("add-note work office report")
+        answer = run("sort-notes OFFICE")
+        assert "No note has" not in answer
+        assert answer.index("Work") < answer.index("Shop")
+
+    def test_sort_with_brackets_around_the_tag(self, run):
+        run("add-note shop home buy milk")
+        assert "No note has" not in run("sort-notes [home]")
+
+    def test_sort_on_an_empty_notebook_keeps_its_message(self, run):
+        assert "No notes yet." in run("sort-notes home")
+        assert "No note has" not in run("sort-notes home")
+
+    def test_note_names_are_normalized_like_contact_names(self, run, notes):
+        assert "Note 'N1' added" in run("add-note n1 home text")
+        run("add-note McDonald home text")
+        assert "McDonald" in notes
+
+
+class TestDefaultOrder:
+    """Lists are shown sorted by name, whatever order the items were added in."""
+
+    @staticmethod
+    def names(answer):
+        return [
+            line[2:].split()[0] for line in answer.splitlines() if line.startswith("● ")
+        ]
+
+    def test_all_lists_contacts_by_name(self, run):
+        run("add zed 0501111111")
+        run("add anna 0502222222")
+        run("add Bob 0503333333")
+        run("add mcDonald 0504444444")
+        assert self.names(run("all")) == ["Anna", "Bob", "Mcdonald", "Zed"]
+
+    def test_find_contacts_lists_matches_by_name(self, run):
+        run("add zed 0501111111")
+        run("add anna 0502222222")
+        assert self.names(run("find-contacts phone=050")) == ["Anna", "Zed"]
+
+    def test_all_notes_lists_notes_by_name(self, run):
+        for name in ("zeta", "alpha", "Mid"):
+            run(f"add-note {name} t text")
+        assert self.names(run("all-notes")) == ["Alpha", "Mid", "Zeta"]
+
+    def test_find_notes_lists_matches_by_name(self, run):
+        run("add-note zeta t milk")
+        run("add-note alpha t milk")
+        assert self.names(run("find-notes text=milk")) == ["Alpha", "Zeta"]
+
+    def test_sort_notes_still_puts_the_tag_first(self, run):
+        run("add-note alpha a text")
+        run("add-note zeta b text")
+        assert self.names(run("sort-notes b")) == ["Zeta", "Alpha"]
+
+    def test_order_does_not_depend_on_the_order_of_adding(self, run):
+        run("add zed 0501111111")
+        run("add anna 0502222222")
+        first = self.names(run("all"))
+        run("remove zed")
+        run("add zed 0501111111")
+        assert self.names(run("all")) == first
+
+
+class TestRenameContact:
+    def test_rename_moves_everything_to_the_new_name(self, run, book):
+        run("add anna 0123456789")
+        run("add-email anna a@b.co")
+        run("add-birthday anna 15.03.1990")
+        run("add-address anna Kyiv Main St")
+        assert "renamed to 'Anne'" in run("change-name anna anne")
+        assert "Anna" not in book
+        contact = book["Anne"]
+        assert contact.name.value == "Anne"
+        assert [p.value for p in contact.phones] == ["0123456789"]
+        assert contact.email.value == "a@b.co"
+        assert contact.birthday.value == "15.03.1990"
+        assert contact.address.value == "Kyiv Main St"
+
+    def test_old_name_no_longer_exists(self, run):
+        run("add anna 0123456789")
+        run("change-name anna anne")
+        assert "does not exist" in run("phone anna")
+        assert "0123456789" in run("phone ANNE")
+
+    def test_old_name_is_found_in_any_case(self, run, book):
+        run("add anna 0123456789")
+        assert "renamed" in run("change-name ANNA anne")
+        assert "Anne" in book
+
+    def test_new_name_is_normalized(self, run, book):
+        run("add anna 0123456789")
+        run("change-name anna ANNE")
+        assert "Anne" in book
+
+    def test_taken_name_is_refused_in_any_case(self, run, book):
+        run("add anna 0123456789")
+        run("add bob 0987654321")
+        answer = run("change-name bob ANNA")
+        assert "already exists" in answer
+        assert set(book) == {"Anna", "Bob"}
+        assert [p.value for p in book["Bob"].phones] == ["0987654321"]
+
+    @pytest.mark.parametrize("new_name", ["anna", "ANNA", "Anna"])
+    def test_same_name_is_refused(self, run, book, new_name):
+        run("add anna 0123456789")
+        answer = run(f"change-name anna {new_name}")
+        assert "same as the current" in answer
+        assert "renamed" not in answer
+
+    def test_missing_contact(self, run):
+        assert "does not exist" in run("change-name ghost anne")
+
+    @pytest.mark.parametrize(
+        "line", ["change-name", "change-name anna", "change-name a b c"]
+    )
+    def test_wrong_arguments_show_usage(self, run, book, line):
+        run("add anna 0123456789")
+        assert "Usage: change-name" in run(line)
+        assert list(book) == ["Anna"]
+
+    def test_case_only_change_of_a_mixed_case_name(self, run, book):
+        run("add McDonald 0123456789")
+        run("add-email McDonald a@b.co")
+        assert "renamed" in run("change-name mcdonald MacDonald")
+        assert list(book) == ["MacDonald"]
+
+    def test_phone_stays_unique_after_rename(self, run):
+        run("add anna 0123456789")
+        run("change-name anna anne")
+        assert "already belongs to 'Anne'" in run("add bob 0123456789")
+
+
+class TestRenameNote:
+    def test_rename_keeps_tags_and_text(self, run, notes):
+        run("add-note shop home,food buy milk")
+        assert "renamed to 'Groceries'" in run("change-note-name shop groceries")
+        assert "Shop" not in notes
+        note = notes["Groceries"]
+        assert [tag.value for tag in note.tags] == ["home", "food"]
+        assert note.text.value == "buy milk"
+
+    def test_old_name_no_longer_exists(self, run):
+        run("add-note shop home text")
+        run("change-note-name shop groceries")
+        assert "does not exist" in run("change-note-text shop other")
+        assert "changed" in run("change-note-text GROCERIES other")
+
+    def test_taken_name_is_refused_in_any_case(self, run, notes):
+        run("add-note shop home text")
+        run("add-note work office report")
+        assert "already exists" in run("change-note-name work SHOP")
+        assert set(notes) == {"Shop", "Work"}
+
+    @pytest.mark.parametrize("new_name", ["shop", "SHOP", "Shop"])
+    def test_same_name_is_refused(self, run, new_name):
+        run("add-note shop home text")
+        answer = run(f"change-note-name shop {new_name}")
+        assert "same as the current" in answer
+        assert "renamed" not in answer
+
+    def test_missing_note(self, run):
+        assert "does not exist" in run("change-note-name ghost other")
+
+    @pytest.mark.parametrize(
+        "line", ["change-note-name", "change-note-name shop", "change-note-name a b c"]
+    )
+    def test_wrong_arguments_show_usage(self, run, notes, line):
+        run("add-note shop home text")
+        assert "Usage: change-note-name" in run(line)
+        assert list(notes) == ["Shop"]
+
+    def test_contacts_and_notes_have_separate_names(self, run, book, notes):
+        run("add anna 0123456789")
+        run("add-note anna home text")
+        run("change-note-name anna memo")
+        assert list(book) == ["Anna"]
+        assert list(notes) == ["Memo"]
+
+
 class TestUpcomingBirthdaysCommand:
     @pytest.mark.parametrize(
         "line",

@@ -49,10 +49,12 @@ CONFIRM_COMMANDS = {
     Command.REMOVE_NOTE,
     Command.REMOVE_NOTE_TAG,
     # They replace existing data based on the model's guess.
+    Command.CHANGE_NAME,
     Command.CHANGE_PHONE,
     Command.CHANGE_ADDRESS,
     Command.CHANGE_EMAIL,
     Command.CHANGE_BIRTHDAY,
+    Command.CHANGE_NOTE_NAME,
     Command.CHANGE_NOTE_TEXT,
     Command.CHANGE_NOTE_TAG,
     Command.ADD_BIRTHDAY,
