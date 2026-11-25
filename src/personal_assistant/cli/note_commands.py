@@ -133,6 +133,23 @@ def remove_note_tag(args: list[str], book: NoteBook) -> str:
     return ui.success(f"Tag '{tag.lower()}' removed from '{ui.highlight(note.name)}'.")
 
 
+@handle_cmd_error(Command.CHANGE_NOTE_NAME)
+def change_note_name(args: list[str], book: NoteBook) -> str:
+    """
+    command `change-note-name [name] [new name]`: rename a note
+    :param args: [name, new_name]: list[str]
+    :param book: NoteBook
+    :return: answer to print; a missing note (NoteDoesNotExist), an invalid, identical or taken
+        name (ValidationError) and wrong args (ValueError) are handled by handle_cmd_error
+    """
+    name, new_name = args
+    old = book.get_note(name).name.value
+    note = book.rename(name, new_name)
+    return ui.success(
+        f"Note '{ui.highlight(old)}' renamed to '{ui.highlight(note.name)}'."
+    )
+
+
 @handle_cmd_error(Command.CHANGE_NOTE_TEXT)
 def change_note_text(args: list[str], book: NoteBook) -> str:
     """
@@ -202,6 +219,7 @@ NOTE_COMMANDS: dict[Command, Handler[NoteBook]] = {
     Command.ADD_NOTE_TAG: add_note_tag,
     Command.CHANGE_NOTE_TAG: change_note_tag,
     Command.REMOVE_NOTE_TAG: remove_note_tag,
+    Command.CHANGE_NOTE_NAME: change_note_name,
     Command.CHANGE_NOTE_TEXT: change_note_text,
     Command.ALL_NOTES: show_all_notes,
     Command.SORT_NOTES: sort_notes,

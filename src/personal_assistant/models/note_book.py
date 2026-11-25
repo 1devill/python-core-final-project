@@ -46,6 +46,29 @@ class NoteBook(UserDict):
             raise NoteDoesNotExist(Name(name).value)
         return self.data[key]
 
+    def rename(self, name: str, new_name: str) -> Note:
+        """
+        give a note a new name
+        :param name: current note name: str, any case
+        :param new_name: new note name: str, normalized by Name
+        :return: the renamed Note; raises NoteDoesNotExist if there is no such note and
+            ValidationError if the new name is invalid, the same as the current one or used
+            by another note in any case; nothing changes if it raises
+        """
+        key = self._key(name)
+        if key is None:
+            raise NoteDoesNotExist(Name(name).value)
+        new = Name(new_name)
+        if new.value == key:
+            raise ValidationError("New name is the same as the current one")
+        taken = self._key(new.value)
+        if taken is not None and taken != key:
+            raise ValidationError(f"Note '{taken}' already exists")
+        note = self.data.pop(key)
+        note.name = new
+        self.data[new.value] = note
+        return note
+
     def search_by_text(self, text: str) -> list[Note]:
         """
         find notes whose text contains the given text, in any case

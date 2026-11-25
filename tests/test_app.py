@@ -152,3 +152,10 @@ def test_renamed_contact_survives_a_restart(app):
     assert "Anne" in plain(result.stdout)
     assert "a@b.co" in result.stdout
     assert "Anna" not in plain(result.stdout).split("Contacts (")[1]
+
+
+def test_renamed_note_survives_a_restart(app):
+    app("add-note shop home buy milk", "change-note-name shop groceries")
+    out = plain(app("all-notes").stdout)
+    assert "Groceries" in out and "buy milk" in out
+    assert "Shop" not in out.split("Notes (")[1]

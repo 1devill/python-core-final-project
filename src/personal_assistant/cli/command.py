@@ -155,6 +155,11 @@ class Command(Enum):
         "Show all notes, the ones with [tag] first",
     )
 
+    CHANGE_NOTE_NAME = (
+        "change-note-name",
+        "change-note-name [name] [new name]",
+        "Rename a note",
+    )
     CHANGE_NOTE_TEXT = (
         "change-note-text",
         "change-note-text [name] [text]",

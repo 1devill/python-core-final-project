@@ -602,6 +602,53 @@ class TestRenameContact:
         assert "already belongs to 'Anne'" in run("add bob 0123456789")
 
 
+class TestRenameNote:
+    def test_rename_keeps_tags_and_text(self, run, notes):
+        run("add-note shop home,food buy milk")
+        assert "renamed to 'Groceries'" in run("change-note-name shop groceries")
+        assert "Shop" not in notes
+        note = notes["Groceries"]
+        assert [tag.value for tag in note.tags] == ["home", "food"]
+        assert note.text.value == "buy milk"
+
+    def test_old_name_no_longer_exists(self, run):
+        run("add-note shop home text")
+        run("change-note-name shop groceries")
+        assert "does not exist" in run("change-note-text shop other")
+        assert "changed" in run("change-note-text GROCERIES other")
+
+    def test_taken_name_is_refused_in_any_case(self, run, notes):
+        run("add-note shop home text")
+        run("add-note work office report")
+        assert "already exists" in run("change-note-name work SHOP")
+        assert set(notes) == {"Shop", "Work"}
+
+    @pytest.mark.parametrize("new_name", ["shop", "SHOP", "Shop"])
+    def test_same_name_is_refused(self, run, new_name):
+        run("add-note shop home text")
+        answer = run(f"change-note-name shop {new_name}")
+        assert "same as the current" in answer
+        assert "renamed" not in answer
+
+    def test_missing_note(self, run):
+        assert "does not exist" in run("change-note-name ghost other")
+
+    @pytest.mark.parametrize(
+        "line", ["change-note-name", "change-note-name shop", "change-note-name a b c"]
+    )
+    def test_wrong_arguments_show_usage(self, run, notes, line):
+        run("add-note shop home text")
+        assert "Usage: change-note-name" in run(line)
+        assert list(notes) == ["Shop"]
+
+    def test_contacts_and_notes_have_separate_names(self, run, book, notes):
+        run("add anna 0123456789")
+        run("add-note anna home text")
+        run("change-note-name anna memo")
+        assert list(book) == ["Anna"]
+        assert list(notes) == ["Memo"]
+
+
 class TestUpcomingBirthdaysCommand:
     @pytest.mark.parametrize(
         "line",
