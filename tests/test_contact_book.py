@@ -171,3 +171,22 @@ class TestPhoneOwner:
         make_contact("anna", phones=["0123456789"])
         make_contact("bob", phones=["0123456789"])
         assert len(book) == 2
+
+
+class TestOrder:
+    def test_sorted_contacts_ignore_case(self, book, make_contact):
+        for name in ("zed", "Anna", "bob"):
+            make_contact(name)
+        assert [c.name.value for c in book.sorted_contacts()] == ["Anna", "Bob", "Zed"]
+
+    def test_search_results_are_sorted(self, book, make_contact):
+        make_contact("zed", phones=["0501111111"])
+        make_contact("anna", phones=["0502222222"])
+        found = book.search_contacts(phone="050")
+        assert [c.name.value for c in found] == ["Anna", "Zed"]
+
+    def test_sorting_does_not_change_the_book(self, book, make_contact):
+        make_contact("zed")
+        make_contact("anna")
+        book.sorted_contacts()
+        assert list(book.data) == ["Zed", "Anna"]

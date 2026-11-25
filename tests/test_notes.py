@@ -118,7 +118,7 @@ class TestNoteBook:
         "filters, expected",
         [
             ({"name": "shop"}, ["Shop"]),
-            ({"tag": "HOME"}, ["Shop", "Alpha"]),
+            ({"tag": "HOME"}, ["Alpha", "Shop"]),  # sorted by name
             ({"text": "MILK"}, ["Shop", "Work"]),
             ({"tag": "home", "text": "milk"}, ["Shop"]),
             ({"name": "shop", "tag": "office"}, []),

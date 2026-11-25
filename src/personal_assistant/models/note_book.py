@@ -75,7 +75,7 @@ class NoteBook(UserDict):
         :param name: note name: str, any case
         :param tag: one of the note tags: str, any case
         :param text: part of the note text: str, any case
-        :return: list[Note], empty if nothing matches; raises ValueError if no filter is given
+        :return: list[Note] sorted by name, empty if nothing matches; raises ValueError if no filter is given
             and ValidationError if a given filter is empty ("" is in every text and would match all notes)
         """
         filters = {"name": name, "tag": tag, "text": text}
@@ -85,7 +85,7 @@ class NoteBook(UserDict):
             if value is not None and not value.strip():
                 raise ValidationError(f"Filter '{key}' must not be empty")
 
-        notes = list(self.data.values())
+        notes = self.sorted_notes()
         if name is not None:
             wanted = name.strip().casefold()
             notes = [note for note in notes if note.name.value.casefold() == wanted]
@@ -96,6 +96,10 @@ class NoteBook(UserDict):
             notes = [note for note in notes if text in note.text.value.lower()]
         return notes
 
+    def sorted_notes(self) -> list[Note]:
+        """Return all notes sorted by name, ignoring case."""
+        return sorted(self.data.values(), key=lambda note: note.name.value.casefold())
+
     def delete_note(self, name: str) -> None:
         """
         delete a note by name
@@ -105,11 +109,14 @@ class NoteBook(UserDict):
 
     def sort_by_tag(self, tag: str) -> list[Note]:
         """
-        all notes: the ones with the tag first, then the rest; sorted by name inside each group
+        all notes: the ones with the tag first, then the rest; sorted by name (ignoring case) inside each group
         :param tag: tag: str, any case
         :return: list[Note]
         """
         return sorted(
             self.data.values(),
-            key=lambda note: (note.find_by_tag(tag) is None, note.name.value),
+            key=lambda note: (
+                note.find_by_tag(tag) is None,
+                note.name.value.casefold(),
+            ),
         )

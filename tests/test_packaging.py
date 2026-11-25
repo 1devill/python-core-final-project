@@ -30,3 +30,48 @@ def test_python_version_matches_the_readme(project):
 def test_readme_is_the_package_readme(project):
     assert project["readme"] == "README.md"
     assert (PYPROJECT.parent / "README.md").is_file()
+
+
+def test_readme_has_no_unfinished_markers():
+    readme = (PYPROJECT.parent / "README.md").read_text(encoding="utf-8").lower()
+    for marker in ("in development", "planned", "<repo-url>"):
+        assert marker not in readme
+
+
+def test_readme_documents_the_data_file():
+    readme = (PYPROJECT.parent / "README.md").read_text(encoding="utf-8")
+    assert "data.pkl" in readme
+    assert ".bak" in readme
+
+
+def test_authors_are_listed_with_full_names(project):
+    readme = (PYPROJECT.parent / "README.md").read_text(encoding="utf-8")
+    for author in project["authors"]:
+        assert f"- {author['name']}" in readme
+
+
+def test_every_command_is_in_the_readme_usage_tables():
+    from personal_assistant.cli import Command
+
+    readme = (PYPROJECT.parent / "README.md").read_text(encoding="utf-8")
+    usage = readme.split("## Usage")[1].split("## Project structure")[0]
+    for command in Command:
+        assert f"`{command.keyword}" in usage, command.keyword
+
+
+def test_readme_usage_follows_the_help_groups():
+    from personal_assistant.cli import Command
+
+    readme = (PYPROJECT.parent / "README.md").read_text(encoding="utf-8")
+    usage = readme.split("## Usage")[1].split("## Project structure")[0]
+    titles = {
+        "Contacts": "Contact commands",
+        "Notes": "Note commands",
+        "General": "General commands",
+    }
+    sections = {
+        group: usage.split(f"### {title}")[1].split("###")[0]
+        for group, title in titles.items()
+    }
+    for command in Command:
+        assert f"`{command.keyword}" in sections[command.group], command.keyword

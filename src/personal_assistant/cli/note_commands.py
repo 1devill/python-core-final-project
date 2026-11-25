@@ -10,6 +10,13 @@ from .parser import parse_filters, require_no_args
 
 SEARCH_KEYS = ("name", "tag", "text")
 
+ADD_NOTE_HINT = (
+    "A note needs a name, tags and text.\n"
+    f"  Usage:   {Command.ADD_NOTE.usage}\n"
+    "  Example: add-note shop home,food buy milk\n"
+    "  The word after the name is always the tags; everything after it is the text."
+)
+
 
 def strip_brackets(tags: str) -> str:
     """
@@ -40,9 +47,11 @@ def add_note(args: list[str], book: NoteBook) -> str:
     :param args: [name, tags, *text words]: list[str]; tags are comma-separated, text words are joined with spaces
     :param book: NoteBook
     :return: answer to print with the tags, so a text word taken as a tag is seen at once;
-        a duplicate name, empty tags or text (ValidationError) and wrong args (ValueError)
+        a duplicate name, empty tags or text, and a missing name or tags (ValidationError)
         are handled by handle_cmd_error
     """
+    if len(args) < 2:
+        raise ValidationError(ADD_NOTE_HINT)
     name, tags, *text_parts = args
     note = Note(name, strip_brackets(tags).split(","), " ".join(text_parts))
     book.add_note(note)
@@ -145,10 +154,10 @@ def show_all_notes(args: list[str], book: NoteBook) -> str:
     command `all-notes`: show all notes of the book
     :param args: command args: list[str]; must be empty, otherwise ValidationError
     :param book: NoteBook
-    :return: note cards, or a message if there are none
+    :return: note cards sorted by name, or a message if there are none
     """
     require_no_args(Command.ALL_NOTES, args)
-    return ui.note_list(book.values())
+    return ui.note_list(book.sorted_notes())
 
 
 @handle_cmd_error(Command.SORT_NOTES)
@@ -157,10 +166,19 @@ def sort_notes(args: list[str], book: NoteBook) -> str:
     command `sort-notes [tag]`: show all notes, the ones with the tag first
     :param args: [tag]: list[str]
     :param book: NoteBook
-    :return: note cards; wrong args (ValueError) are handled by handle_cmd_error
+    :return: note cards; if no note has the tag, a line saying so comes first;
+        wrong args (ValueError) are handled by handle_cmd_error
     """
     (tag,) = args
-    return ui.note_list(book.sort_by_tag(strip_brackets(tag)))
+    tag = strip_brackets(tag)
+    notes = book.sort_by_tag(tag)
+    if notes and not any(note.find_by_tag(tag) for note in notes):
+        return (
+            ui.info(f"No note has the tag '{tag}'. All notes:")
+            + "\n"
+            + ui.note_list(notes)
+        )
+    return ui.note_list(notes)
 
 
 @handle_cmd_error(Command.FIND_NOTES)

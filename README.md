@@ -3,8 +3,6 @@
 A command-line personal assistant for managing contacts and notes.
 Team project for the Neoversity course _Python Programming: Foundations and Best Practices_.
 
-> **Status:** in development. Commands and installation steps below describe the planned interface and will be updated as features land.
-
 ## Features
 
 ### Contacts
@@ -25,6 +23,10 @@ Team project for the Neoversity course _Python Programming: Foundations and Best
 - All data is saved to the user's home folder (`~/.personal_assistant/`)
 - Data persists between restarts
 
+Contacts and notes are kept in one file, `~/.personal_assistant/data.pkl`, and saved after every command.
+If the file is damaged, the assistant starts with an empty book, tells you, and keeps the damaged
+file next to it as `data.pkl.bak` (then `data.pkl.bak1`, `data.pkl.bak2`, ...), so nothing is lost.
+
 ## Requirements
 
 - Python 3.10+
@@ -32,7 +34,7 @@ Team project for the Neoversity course _Python Programming: Foundations and Best
 ## Installation
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/1devill/python-core-final-project.git
 cd python-core-final-project
 
 python -m venv .venv
@@ -57,9 +59,10 @@ python -m personal_assistant
 
 The assistant runs in an interactive loop: type a command, press Enter, and it responds until you exit.
 
+### Contact commands
+
 | Command                                                      | Description                                     |
 | ------------------------------------------------------------ | ----------------------------------------------- |
-| `hello`                                                      | Greeting                                        |
 | `add [name] [phone]`                                         | Add a contact or a phone to an existing contact |
 | `change-phone [name] [old phone] [new phone]`                | Change a contact's phone                        |
 | `phone [name]`                                               | Show a contact's phones                         |
@@ -76,6 +79,11 @@ The assistant runs in an interactive loop: type a command, press Enter, and it r
 | `remove [name]`                                              | Remove a contact                                |
 | `remove-phone [name] [phone]`                                | Remove a contact's phone                        |
 | `remove-birthday` / `remove-email` / `remove-address [name]` | Remove a contact's birthday / email / address   |
+
+### Note commands
+
+| Command                                                      | Description                                     |
+| ------------------------------------------------------------ | ----------------------------------------------- |
 | `add-note [name] [tag1,tag2] [text]`                         | Add a note (at least one tag, comma-separated)  |
 | `all-notes`                                                  | Show all notes                                  |
 | `find-notes [name=..] [tag=..] [text=..]`                    | Find notes matching all given filters           |
@@ -85,8 +93,39 @@ The assistant runs in an interactive loop: type a command, press Enter, and it r
 | `change-note-tag [name] [old tag] [new tag]`                 | Replace a note's tag                            |
 | `remove-note-tag [name] [tag]`                               | Remove a tag (the last one can't be removed)    |
 | `remove-note [name]`                                         | Remove a note                                   |
+
+### General commands
+
+| Command                                                      | Description                                     |
+| ------------------------------------------------------------ | ----------------------------------------------- |
+| `hello`                                                      | Greeting                                        |
 | `help`                                                       | Show all commands, grouped by area              |
 | `exit` / `close` / `bye` / `quit`                            | Save data and exit                              |
+
+### Names
+
+Contact and note names are one word and are matched in any case. A name typed all in lowercase or all
+in capitals is stored with a capital first letter (`n1` → `N1`, `ANNA` → `Anna`); a name that already
+starts with a capital and mixes cases is kept (`McDonald`).
+
+### Adding notes
+
+`add-note [name] [tag1,tag2] [text]` always reads the word after the name as the tags, and everything
+after it as the text. The answer shows the tags that were saved, so a mistake is easy to spot:
+
+```text
+add-note shop home,food buy milk   →  Note 'Shop' added with tags #home, #food.
+add-note shop buy milk             →  Note 'Shop' added with tags #buy.   (text: "milk")
+```
+
+`add-note` with no tags or text shows this explanation. `sort-notes [tag]` with a tag no note has
+says so and then lists all notes.
+
+### Order of lists
+
+`all`, `all-notes`, `find-contacts` and `find-notes` show items sorted by name (A to Z, ignoring case),
+whatever order they were added in. `show-upcoming-birthdays` is sorted by the date of the next birthday.
+`sort-notes [tag]` keeps its own order: notes with the tag first, then the rest, each part by name.
 
 ### Editing rules
 
@@ -109,7 +148,7 @@ Empty filters (`text=`) are rejected; nothing found (by any filter, name include
 
 ## Project structure
 
-The project uses the `src/` layout. Some modules below are planned and will be added as features are implemented.
+The project uses the `src/` layout.
 
 ```
 python-core-final-project/

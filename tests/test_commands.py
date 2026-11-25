@@ -448,6 +448,91 @@ class TestEmailCase:
         assert "changed" not in run("change-email anna A@B.CO")
 
 
+class TestNoteHints:
+    @pytest.mark.parametrize("line", ["add-note", "add-note shop"])
+    def test_add_note_without_tags_explains_the_syntax(self, run, notes, line):
+        answer = run(line)
+        assert "needs a name, tags and text" in answer
+        assert "Example: add-note shop home,food buy milk" in answer
+        assert "word after the name" in answer
+        assert len(notes) == 0
+
+    def test_add_note_without_text_keeps_its_own_message(self, run):
+        assert "must not be empty" in run("add-note shop home")
+
+    def test_sort_by_unknown_tag_says_so_and_lists_all_notes(self, run):
+        run("add-note shop home buy milk")
+        run("add-note work office report")
+        answer = run("sort-notes zzz")
+        assert "No note has the tag 'zzz'" in answer
+        assert "Shop" in answer and "Work" in answer
+
+    def test_sort_by_known_tag_has_no_warning(self, run):
+        run("add-note shop home buy milk")
+        run("add-note work office report")
+        answer = run("sort-notes OFFICE")
+        assert "No note has" not in answer
+        assert answer.index("Work") < answer.index("Shop")
+
+    def test_sort_with_brackets_around_the_tag(self, run):
+        run("add-note shop home buy milk")
+        assert "No note has" not in run("sort-notes [home]")
+
+    def test_sort_on_an_empty_notebook_keeps_its_message(self, run):
+        assert "No notes yet." in run("sort-notes home")
+        assert "No note has" not in run("sort-notes home")
+
+    def test_note_names_are_normalized_like_contact_names(self, run, notes):
+        assert "Note 'N1' added" in run("add-note n1 home text")
+        run("add-note McDonald home text")
+        assert "McDonald" in notes
+
+
+class TestDefaultOrder:
+    """Lists are shown sorted by name, whatever order the items were added in."""
+
+    @staticmethod
+    def names(answer):
+        return [
+            line[2:].split()[0] for line in answer.splitlines() if line.startswith("● ")
+        ]
+
+    def test_all_lists_contacts_by_name(self, run):
+        run("add zed 0501111111")
+        run("add anna 0502222222")
+        run("add Bob 0503333333")
+        run("add mcDonald 0504444444")
+        assert self.names(run("all")) == ["Anna", "Bob", "Mcdonald", "Zed"]
+
+    def test_find_contacts_lists_matches_by_name(self, run):
+        run("add zed 0501111111")
+        run("add anna 0502222222")
+        assert self.names(run("find-contacts phone=050")) == ["Anna", "Zed"]
+
+    def test_all_notes_lists_notes_by_name(self, run):
+        for name in ("zeta", "alpha", "Mid"):
+            run(f"add-note {name} t text")
+        assert self.names(run("all-notes")) == ["Alpha", "Mid", "Zeta"]
+
+    def test_find_notes_lists_matches_by_name(self, run):
+        run("add-note zeta t milk")
+        run("add-note alpha t milk")
+        assert self.names(run("find-notes text=milk")) == ["Alpha", "Zeta"]
+
+    def test_sort_notes_still_puts_the_tag_first(self, run):
+        run("add-note alpha a text")
+        run("add-note zeta b text")
+        assert self.names(run("sort-notes b")) == ["Zeta", "Alpha"]
+
+    def test_order_does_not_depend_on_the_order_of_adding(self, run):
+        run("add zed 0501111111")
+        run("add anna 0502222222")
+        first = self.names(run("all"))
+        run("remove zed")
+        run("add zed 0501111111")
+        assert self.names(run("all")) == first
+
+
 class TestUpcomingBirthdaysCommand:
     @pytest.mark.parametrize(
         "line",

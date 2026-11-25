@@ -73,7 +73,7 @@ def get_phones(args: list[str], book: ContactBook) -> str:
 @handle_cmd_error(Command.ALL)
 def show_all(args: list[str], book: ContactBook) -> str:
     require_no_args(Command.ALL, args)
-    return ui.contact_list(book.values())
+    return ui.contact_list(book.sorted_contacts())
 
 
 @handle_cmd_error(Command.ADD_BIRTHDAY)
